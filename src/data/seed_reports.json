@@ -1,0 +1,242 @@
+[
+  {
+    "id": "RAW-001",
+    "title": "Infusion pump alarm doesn't trigger",
+    "description": "The occlusion alarm on the infusion pump display doesn't sound when the IV line is blocked. We tested with a clamp on the line and the alarm LED stayed green. No audio alert.",
+    "component": "alarm-subsystem",
+    "reporter": "clinical_engineer_01",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-002",
+    "title": "Dosage calculator shows wrong result",
+    "description": "When entering patient weight as 72.5kg and drug concentration 250mg/500ml, the calculator shows 18.1 ml/hr instead of the correct 14.5 ml/hr. Reproduced 3 times.",
+    "component": "dosage-calculator",
+    "reporter": "pharmacist_qa",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-003",
+    "title": "Audit log missing entries after crash",
+    "description": "After a system restart following a power cut, the last 47 audit log entries are missing. The timestamps jump from 14:22 to 15:09 with no records in between.",
+    "component": "audit-logger",
+    "reporter": "compliance_officer",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-004",
+    "title": "Patient ID field accepts special characters",
+    "description": "The patient ID input field accepts SQL injection strings like ' OR 1=1 -- without validation. Should only allow alphanumeric and dash.",
+    "component": "patient-registration",
+    "reporter": "security_tester",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-005",
+    "title": "Vital signs graph freezes at 30 min",
+    "description": "The real-time vital signs monitoring graph stops updating after approximately 30 minutes of continuous display. The page needs a manual refresh. Happens on all browsers.",
+    "component": "monitoring-dashboard",
+    "reporter": "nurse_station_02",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-006",
+    "title": "Electronic signature not validated on discharge form",
+    "description": "Doctor can submit the patient discharge form without providing a valid PIN for electronic signature. The form just warns but still submits.",
+    "component": "e-signature",
+    "reporter": "qa_lead",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-007",
+    "title": "DICOM image loads in wrong orientation",
+    "description": "Chest X-ray DICOM files uploaded from the new Siemens scanner display rotated 90 degrees clockwise. Images from the older Philips scanner display correctly.",
+    "component": "dicom-viewer",
+    "reporter": "radiologist_01",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-008",
+    "title": "Medication reconciliation duplicates entries",
+    "description": "When a nurse confirms medication reconciliation after a ward transfer, existing medication entries are duplicated in the record. Patient now shows 2x metformin 500mg.",
+    "component": "medication-reconciliation",
+    "reporter": "ward_pharmacist",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-009",
+    "title": "Session timeout not enforced on shared workstation",
+    "description": "The 15-minute idle session timeout does not trigger on the ward workstations. Nurses are finding previous clinicians' sessions still active after breaks exceeding 30 minutes.",
+    "component": "session-management",
+    "reporter": "ict_security",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-010",
+    "title": "CSV export of patient reports contains raw HTML",
+    "description": "Exporting patient summary reports to CSV includes raw HTML tags like <b> and <br> in the text fields. Third-party analytics tool cannot parse the file.",
+    "component": "report-export",
+    "reporter": "data_analyst",
+    "sector": "medtech"
+  },
+  {
+    "id": "RAW-011",
+    "title": "2FA code accepted after expiry",
+    "description": "A TOTP code generated 4 minutes ago was still accepted for login even though codes should expire after 30 seconds. Tested with a deliberately delayed code.",
+    "component": "authentication",
+    "reporter": "security_engineer",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-012",
+    "title": "Wire transfer amount field allows negative values",
+    "description": "Entering -500 in the wire transfer amount field processes as a credit of 500 to the sender account instead of rejecting the input. Tested on staging.",
+    "component": "payment-processing",
+    "reporter": "qa_fintech_01",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-013",
+    "title": "Transaction history pagination skips records",
+    "description": "When navigating to page 3 of transaction history (25 per page), records 51-75 are skipped and page 3 shows the same records as page 2. Affects accounts with 200+ transactions.",
+    "component": "transaction-history",
+    "reporter": "customer_support_lead",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-014",
+    "title": "Currency conversion rate not updated during market hours",
+    "description": "The EUR/GBP exchange rate displayed in the transfer form shows yesterday's closing rate during London market hours instead of the live rate. 40-minute lag observed.",
+    "component": "fx-rate-feed",
+    "reporter": "trader_desk",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-015",
+    "title": "PDF statement generation crashes for accounts over 5 years",
+    "description": "Requesting a PDF statement for accounts older than 5 years causes a 502 error. The request times out after 30 seconds. Accounts under 5 years work correctly.",
+    "component": "statement-generator",
+    "reporter": "ops_team",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-016",
+    "title": "Beneficiary IBAN validation accepts invalid checksums",
+    "description": "The beneficiary IBAN input field accepts IBANs with invalid MOD-97 checksums without displaying an error. Invalid transfers are then rejected by the downstream bank with a fee.",
+    "component": "beneficiary-management",
+    "reporter": "compliance_qa",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-017",
+    "title": "Push notification for large transaction not sent",
+    "description": "Transactions over 10,000 EUR should trigger an immediate push notification per PSD2 requirements. Three test transactions of 15,000 EUR produced no notification within 10 minutes.",
+    "component": "notification-service",
+    "reporter": "regulatory_team",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-018",
+    "title": "Loan calculator ignores compound interest after month 12",
+    "description": "The loan repayment calculator produces correct results for months 1-12 but from month 13 it calculates simple interest instead of compound. 8% difference on a 36-month loan.",
+    "component": "loan-calculator",
+    "reporter": "product_qa",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-019",
+    "title": "Account freeze does not block outgoing API transfers",
+    "description": "When an account is flagged and frozen via the compliance dashboard, the REST API still processes outgoing transfer requests for that account. The freeze only blocks UI transfers.",
+    "component": "compliance-engine",
+    "reporter": "aml_team",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-020",
+    "title": "Login session persists after password change",
+    "description": "After a user changes their password, all existing sessions on other devices remain valid and active. Sessions should be invalidated immediately on password change.",
+    "component": "session-management",
+    "reporter": "security_qa",
+    "sector": "fintech"
+  },
+  {
+    "id": "RAW-021",
+    "title": "Button doesn't work",
+    "description": "The submit button on the checkout page doesn't do anything when I click it. I tried refreshing.",
+    "component": "checkout",
+    "reporter": "user_report",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-022",
+    "title": "Page crashes",
+    "description": "The dashboard crashes when I open it. Error appears then disappears. Using Chrome on Windows.",
+    "component": "dashboard",
+    "reporter": "user_report",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-023",
+    "title": "Search not working",
+    "description": "Search results are wrong. I searched for 'laptop' and got results for 'table'. This happens sometimes but not always.",
+    "component": "search",
+    "reporter": "qa_tester",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-024",
+    "title": "Email not sent after registration",
+    "description": "After creating a new account, the confirmation email is not delivered. Checked spam folder. Tried 3 different email addresses. Issue started yesterday afternoon.",
+    "component": "email-service",
+    "reporter": "support_team",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-025",
+    "title": "File upload fails for large files",
+    "description": "Uploading files larger than approximately 50MB fails with no error message. The progress bar reaches 100% then the page reloads. Small files work fine.",
+    "component": "file-upload",
+    "reporter": "qa_tester",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-026",
+    "title": "Dark mode toggle resets on page reload",
+    "description": "When dark mode is enabled and the page is reloaded or navigated away from, the setting reverts to light mode. The preference is not persisted across sessions.",
+    "component": "user-preferences",
+    "reporter": "ux_tester",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-027",
+    "title": "Autocomplete suggestions appear behind modal",
+    "description": "When filling out the address field inside a modal dialog, the autocomplete dropdown suggestions appear behind the modal overlay and are not clickable.",
+    "component": "address-autocomplete",
+    "reporter": "qa_tester",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-028",
+    "title": "Date picker blocks past date selection for edits",
+    "description": "When editing an existing event created in the past, the date picker prevents selecting any past date. This makes it impossible to correct the date of historical records.",
+    "component": "date-picker",
+    "reporter": "product_qa",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-029",
+    "title": "Table sorting breaks after filter applied",
+    "description": "Applying a column filter then clicking a column header to sort results in the wrong order. The sort appears to operate on the pre-filter dataset.",
+    "component": "data-table",
+    "reporter": "qa_tester",
+    "sector": "generic"
+  },
+  {
+    "id": "RAW-030",
+    "title": "Mobile layout overlaps footer on small screens",
+    "description": "On devices with screen width below 375px (e.g. iPhone SE), the main content area overlaps the fixed footer. Buttons in the footer are partially hidden by the content.",
+    "component": "responsive-layout",
+    "reporter": "mobile_qa",
+    "sector": "generic"
+  }
+]
