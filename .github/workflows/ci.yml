@@ -1,0 +1,154 @@
+name: TestScribe CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Job 1 — Lint & static analysis
+  # -------------------------------------------------------------------------
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dev dependencies
+        run: pip install ruff mypy pydantic anthropic flask chromadb scikit-learn numpy
+
+      - name: Ruff lint
+        run: ruff check src/ tests/
+
+      - name: Mypy type check (non-blocking — informational)
+        run: mypy src/ --ignore-missing-imports || true
+
+  # -------------------------------------------------------------------------
+  # Job 2 — Unit tests
+  # -------------------------------------------------------------------------
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install pydantic anthropic flask chromadb scikit-learn numpy \
+                      pytest pytest-cov hypothesis allure-pytest
+
+      - name: Run unit tests with coverage
+        run: |
+          python -m pytest tests/unit/ \
+            --cov=src \
+            --cov-report=xml:coverage.xml \
+            --cov-report=term-missing \
+            --alluredir=allure-results \
+            -q
+        # No ANTHROPIC_API_KEY — all agents use rule-based fallback
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage.xml
+
+      - name: Upload Allure results (unit)
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-unit
+          path: allure-results/
+
+  # -------------------------------------------------------------------------
+  # Job 3 — Integration tests
+  # -------------------------------------------------------------------------
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install pydantic anthropic flask chromadb scikit-learn numpy \
+                      pytest pytest-cov hypothesis allure-pytest
+
+      - name: Run integration tests
+        run: |
+          python -m pytest tests/integration/ \
+            --alluredir=allure-results-integration \
+            -q
+
+      - name: Upload Allure results (integration)
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results-integration
+          path: allure-results-integration/
+
+  # -------------------------------------------------------------------------
+  # Job 4 — Allure report (gated on both test jobs)
+  # -------------------------------------------------------------------------
+  allure-report:
+    name: Generate Allure Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download unit Allure results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-unit
+          path: allure-results/
+
+      - name: Download integration Allure results
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-results-integration
+          path: allure-results/
+
+      - name: Install Allure CLI
+        run: npm install -g allure-commandline
+
+      - name: Generate Allure HTML report
+        run: allure generate allure-results --clean -o allure-report
+
+      - name: Upload Allure HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-html-report
+          path: allure-report/
+
+  # -------------------------------------------------------------------------
+  # Job 5 — Quality gate (blocks merge if tests failed)
+  # -------------------------------------------------------------------------
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - name: All tests passed
+        run: echo "Quality gate passed — unit and integration tests green"

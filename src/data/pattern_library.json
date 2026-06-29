@@ -1,0 +1,100 @@
+{
+  "patterns": [
+    {
+      "name": "AUTH_FLOW",
+      "description": "Authentication, session management, login, logout, token, 2FA, password, SSO defects",
+      "keywords": ["login", "logout", "session", "token", "password", "2fa", "otp", "authentication", "signin", "auth", "credential", "jwt", "cookie", "sso", "expire"],
+      "examples": [
+        "Login button does nothing on Firefox",
+        "2FA code accepted after expiry",
+        "Session persists after password change",
+        "Session timeout not enforced on shared workstation"
+      ]
+    },
+    {
+      "name": "DATA_VALIDATION",
+      "description": "Input validation failures, boundary conditions, type checking, format enforcement",
+      "keywords": ["validation", "invalid", "negative", "null", "empty", "boundary", "format", "reject", "accept", "injection", "special character", "checksum", "iban", "regex"],
+      "examples": [
+        "Wire transfer amount field allows negative values",
+        "Beneficiary IBAN validation accepts invalid checksums",
+        "Patient ID field accepts SQL injection strings",
+        "Date picker blocks past date selection for edits"
+      ]
+    },
+    {
+      "name": "UI_REGRESSION",
+      "description": "Visual, layout, rendering, CSS, responsive design, component display defects",
+      "keywords": ["layout", "display", "render", "overlap", "hidden", "css", "responsive", "mobile", "dark mode", "modal", "dropdown", "button", "click", "scroll"],
+      "examples": [
+        "Mobile layout overlaps footer on small screens",
+        "Autocomplete suggestions appear behind modal",
+        "Dark mode toggle resets on page reload",
+        "Search not working correctly"
+      ]
+    },
+    {
+      "name": "DATA_INTEGRITY",
+      "description": "Data loss, corruption, duplication, synchronisation, persistence failures",
+      "keywords": ["duplicate", "missing", "lost", "corrupt", "sync", "persist", "overwrite", "gap", "inconsistent", "mismatch", "reconcil", "audit log"],
+      "examples": [
+        "Audit log missing entries after crash",
+        "Medication reconciliation duplicates entries",
+        "Transaction history pagination skips records",
+        "CSV export contains raw HTML"
+      ]
+    },
+    {
+      "name": "PERFORMANCE",
+      "description": "Timeouts, slow response, memory leaks, infinite loading, resource exhaustion",
+      "keywords": ["slow", "timeout", "freeze", "hang", "memory", "leak", "performance", "30 min", "lag", "delay", "overload", "cpu", "load time", "crash after"],
+      "examples": [
+        "Vital signs graph freezes at 30 minutes",
+        "PDF statement generation crashes for accounts over 5 years",
+        "File upload fails for large files",
+        "Dashboard crashes on open"
+      ]
+    },
+    {
+      "name": "SAFETY_CRITICAL",
+      "description": "Patient safety, device malfunction, alarm failures, medication errors — medtech specific",
+      "keywords": ["alarm", "alert", "dose", "dosage", "infusion", "pump", "medication", "clinical", "patient", "safety", "hazard", "occlusion", "vital", "critical", "dicom"],
+      "examples": [
+        "Infusion pump alarm does not trigger on occlusion",
+        "Dosage calculator shows wrong result for 72.5kg patient",
+        "DICOM image loads in wrong orientation",
+        "Electronic signature not validated on discharge form"
+      ]
+    },
+    {
+      "name": "COMPLIANCE_REGULATORY",
+      "description": "Regulatory, audit, e-signature, reporting, traceability, PSD2, IEC 62304 failures",
+      "keywords": ["compliance", "regulatory", "audit", "signature", "e-sign", "traceability", "report", "psd2", "gdpr", "notification", "reporting", "required", "mandatory"],
+      "examples": [
+        "Push notification for large transaction not sent",
+        "Electronic signature not validated on discharge form",
+        "Audit log missing entries after crash"
+      ]
+    },
+    {
+      "name": "SECURITY",
+      "description": "Security vulnerabilities, injection, bypass, privilege escalation, data exposure",
+      "keywords": ["security", "injection", "bypass", "exploit", "vulnerability", "xss", "sql", "csrf", "privilege", "unauthorised", "exposed", "leak", "freeze api"],
+      "examples": [
+        "Patient ID field accepts SQL injection strings",
+        "Account freeze does not block outgoing API transfers",
+        "Login session persists after password change"
+      ]
+    },
+    {
+      "name": "INTEGRATION",
+      "description": "Third-party API, external service, feed, connector, protocol failures",
+      "keywords": ["api", "integration", "external", "feed", "connector", "rate", "sync", "exchange", "hl7", "fhir", "dicom", "edi", "webhook", "downstream"],
+      "examples": [
+        "Currency conversion rate not updated during market hours",
+        "DICOM image loads in wrong orientation from Siemens scanner",
+        "CSV export cannot be parsed by third-party analytics"
+      ]
+    }
+  ]
+}
