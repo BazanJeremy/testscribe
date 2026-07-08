@@ -22,8 +22,8 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      - name: Install dev dependencies
-        run: pip install ruff mypy pydantic anthropic flask chromadb scikit-learn numpy
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Ruff lint
         run: ruff check src/ tests/
@@ -48,9 +48,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install pydantic anthropic flask chromadb scikit-learn numpy \
-                      pytest pytest-cov hypothesis allure-pytest
+        run: pip install -r requirements.txt
 
       - name: Run unit tests with coverage
         run: |
@@ -91,9 +89,7 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: |
-          pip install pydantic anthropic flask chromadb scikit-learn numpy \
-                      pytest pytest-cov hypothesis allure-pytest
+        run: pip install -r requirements.txt
 
       - name: Run integration tests
         run: |
