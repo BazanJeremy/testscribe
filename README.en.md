@@ -9,7 +9,7 @@
 
 > 🇫🇷 [Version française](README.md)
 
-**AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human. Project P3 of a 6-project AI Test Engineering portfolio.
+**AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human.
 
 ---
 
@@ -139,7 +139,7 @@ GitHub Actions    Docker           sentence-transformers (optional)
 
 ---
 
-## Bugs Caught by Tests (Portfolio Evidence)
+## Bugs caught by the test suite
 
 This project follows the principle: **tests that find real bugs are assets, not noise**.
 

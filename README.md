@@ -9,7 +9,7 @@
 
 > 🇬🇧 [English version](README.en.md)
 
-**L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine. Projet P3 d'un portfolio de 6 consacré à l'AI Test Engineering.
+**L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine.
 
 ---
 
