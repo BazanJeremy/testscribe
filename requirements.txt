@@ -27,6 +27,6 @@ ruff>=0.4
 mypy>=1.10
 allure-pytest>=2.13
 
-# E2E (Week 3)
+# Optional — E2E (Playwright)
 # playwright>=1.44
 # pytest-playwright>=0.5
