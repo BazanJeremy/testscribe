@@ -1,14 +1,13 @@
-# ⚡ TestScribe — Enrichissement de bug reports assisté par IA
+# TestScribe
 
-![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+**Enrichissement de bug reports assisté par IA : *« button doesn't work »* → rapport de défaut structuré — sévérité CVSS-lite, classification IEC 62304, détection sémantique de doublons — en moins de 100 ms.**
 
-🇬🇧 **[English version](README.en.md)**
+[![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-> *« button doesn't work »* → rapport de défaut structuré : sévérité CVSS-lite, classification IEC 62304, détection sémantique de doublons — en moins de 100 ms.
+> 🇬🇧 [English version](README.en.md)
 
 **L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine. Projet P3 d'un portfolio de 6 consacré à l'AI Test Engineering.
 

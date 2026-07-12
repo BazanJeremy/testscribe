@@ -1,14 +1,13 @@
-# ⚡ TestScribe — AI-powered Bug Report Enricher
+# TestScribe
 
-![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.12%2B-blue)
-![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen)
-![Coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen)
-![License](https://img.shields.io/badge/license-MIT-lightgrey)
+**AI-powered bug report enricher: *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and semantic duplicate detection — in under 100ms.**
 
-🇫🇷 **[Version française](README.md)**
+[![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-> *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and semantic duplicate detection — in under 100ms.
+> 🇫🇷 [Version française](README.md)
 
 **AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human. Project P3 of a 6-project AI Test Engineering portfolio.
 
