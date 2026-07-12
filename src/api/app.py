@@ -11,18 +11,17 @@ Endpoints:
 
 from __future__ import annotations
 
-import json
 import os
-from datetime import datetime, timezone
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
-from flask import Flask, jsonify, request, Response
+from flask import Flask, Response, jsonify, request
 
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from schemas import RawReport
 from core.orchestrator import Orchestrator
+from schemas import RawReport
 
 app = Flask(__name__)
 
@@ -44,7 +43,7 @@ def get_orchestrator() -> Orchestrator:
 
 @app.route("/health")
 def health() -> Response:
-    return jsonify({"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()})
+    return jsonify({"status": "ok", "timestamp": datetime.now(UTC).isoformat()})
 
 
 @app.route("/api/enrich", methods=["POST"])

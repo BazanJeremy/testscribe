@@ -10,14 +10,12 @@ See ADR-001 (ChromaDB) and ADR-002 (embedding strategy) for rationale.
 from __future__ import annotations
 
 import json
-import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from core.embedder import Embedder
-from core.vector_store import VectorStore, SearchResult
+from core.vector_store import SearchResult, VectorStore
 
 _DATA_DIR = Path(__file__).parent.parent / "data"
 _PATTERN_LIBRARY_PATH = _DATA_DIR / "pattern_library.json"
@@ -106,7 +104,7 @@ class PatternClassifier:
 
     def __init__(
         self,
-        persist_path: Optional[str | Path] = None,
+        persist_path: str | Path | None = None,
         force_fallback: bool = False,
     ) -> None:
         self._force_fallback = force_fallback
@@ -150,8 +148,8 @@ class PatternClassifier:
     def classify(
         self,
         description: str,
-        title: Optional[str] = None,
-        sector: Optional[str] = None,
+        title: str | None = None,
+        sector: str | None = None,
         n_similar: int = 3,
     ) -> ClassificationResult:
         if self._force_fallback or not self._seeded:
@@ -223,7 +221,7 @@ class PatternClassifier:
         description: str,
         pattern: str,
         sector: str = "generic",
-        title: Optional[str] = None,
+        title: str | None = None,
     ) -> None:
         """Add a new bug report to the store (online learning)."""
         full_text = f"{title or ''} {description}".strip()

@@ -5,8 +5,7 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from schemas import RawReport, EnrichedReport, CVSSLiteScore, ComplianceTag
-
+from schemas import ComplianceTag, CVSSLiteScore, RawReport
 
 # ---------------------------------------------------------------------------
 # RawReport

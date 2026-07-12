@@ -2,20 +2,18 @@
 
 from __future__ import annotations
 
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from agents.severity_scorer import (
     SeverityScorer,
-    score_rule_based,
     _compute_score,
     _infer_impact,
-    _infer_scope,
-    _infer_repro,
     _infer_regression,
+    _infer_repro,
+    _infer_scope,
+    score_rule_based,
 )
-
 
 # ---------------------------------------------------------------------------
 # Scoring matrix correctness

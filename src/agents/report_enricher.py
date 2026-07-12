@@ -10,7 +10,6 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Optional
 
 try:
     import anthropic
@@ -82,7 +81,7 @@ def _extract_environment(text: str) -> dict[str, str]:
     return env
 
 
-def _build_steps(title: str, description: str, component: Optional[str]) -> list[str]:
+def _build_steps(title: str, description: str, component: str | None) -> list[str]:
     comp_label = component.replace("-", " ") if component else "the feature"
     # Extract numbered steps if present
     numbered = re.findall(r"\d+[.)]\s+(.+)", description)
@@ -119,7 +118,7 @@ def _extract_expected(title: str, description: str) -> str:
     return f"The {title.lower()} should {verb}."
 
 
-def _generate_title(raw_title: Optional[str], description: str) -> str:
+def _generate_title(raw_title: str | None, description: str) -> str:
     if raw_title and len(raw_title) > 10:
         return raw_title[:200]
     first = re.split(r"[.!?]+", description)[0].strip()
@@ -128,8 +127,8 @@ def _generate_title(raw_title: Optional[str], description: str) -> str:
 
 def enrich_rule_based(
     description: str,
-    title: Optional[str] = None,
-    component: Optional[str] = None,
+    title: str | None = None,
+    component: str | None = None,
 ) -> EnrichmentResult:
     """Deterministic fallback enricher — no API key required."""
     gen_title = _generate_title(title, description)
@@ -167,9 +166,9 @@ Return ONLY the JSON object. No markdown, no explanation."""
 
 def enrich_with_claude(
     description: str,
-    title: Optional[str] = None,
-    component: Optional[str] = None,
-    api_key: Optional[str] = None,
+    title: str | None = None,
+    component: str | None = None,
+    api_key: str | None = None,
 ) -> EnrichmentResult:
     """Enrich using claude-sonnet-4-6. Raises on API failure."""
     if not _ANTHROPIC_AVAILABLE:
@@ -220,15 +219,15 @@ def enrich_with_claude(
 class ReportEnricher:
     """Auto-selects Claude or rule-based fallback based on API key availability."""
 
-    def __init__(self, api_key: Optional[str] = None, force_fallback: bool = False):
+    def __init__(self, api_key: str | None = None, force_fallback: bool = False):
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self._force_fallback = force_fallback
 
     def enrich(
         self,
         description: str,
-        title: Optional[str] = None,
-        component: Optional[str] = None,
+        title: str | None = None,
+        component: str | None = None,
     ) -> EnrichmentResult:
         if self._force_fallback or not self._api_key:
             return enrich_rule_based(description, title, component)

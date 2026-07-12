@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
 class RawReport(BaseModel):
     """Minimal input accepted from any source (text, CSV, API payload)."""
 
-    id: Optional[str] = Field(default=None, description="Optional caller-supplied ID")
-    title: Optional[str] = Field(default=None, max_length=300)
+    id: str | None = Field(default=None, description="Optional caller-supplied ID")
+    title: str | None = Field(default=None, max_length=300)
     description: str = Field(min_length=1, max_length=5000)
-    component: Optional[str] = Field(default=None, max_length=100)
-    reporter: Optional[str] = Field(default=None, max_length=100)
-    sector: Optional[str] = Field(
+    component: str | None = Field(default=None, max_length=100)
+    reporter: str | None = Field(default=None, max_length=100)
+    sector: str | None = Field(
         default=None,
         description="Sector hint: 'medtech', 'fintech', or 'generic'",
     )
@@ -29,7 +28,7 @@ class RawReport(BaseModel):
 
     @field_validator("sector")
     @classmethod
-    def normalise_sector(cls, v: Optional[str]) -> Optional[str]:
+    def normalise_sector(cls, v: str | None) -> str | None:
         if v is None:
             return None
         normalised = v.strip().lower()

@@ -14,23 +14,22 @@ Pipeline:
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Optional
 
-from schemas import (
-    RawReport,
-    EnrichedReport,
-    CVSSLiteScore,
-    ComplianceTag,
-    MedtechCompliance,
-    FintechCompliance,
-    SimilarBug,
-)
+from agents.compliance_tagger import ComplianceTagger
+from agents.pattern_classifier import PatternClassifier
 from agents.report_enricher import ReportEnricher
 from agents.severity_scorer import SeverityScorer
-from agents.pattern_classifier import PatternClassifier
-from agents.compliance_tagger import ComplianceTagger
+from schemas import (
+    ComplianceTag,
+    CVSSLiteScore,
+    EnrichedReport,
+    FintechCompliance,
+    MedtechCompliance,
+    RawReport,
+    SimilarBug,
+)
 
 
 class Orchestrator:
@@ -42,9 +41,9 @@ class Orchestrator:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         force_fallback: bool = False,
-        chroma_persist_path: Optional[str | Path] = None,
+        chroma_persist_path: str | Path | None = None,
     ) -> None:
         self._enricher = ReportEnricher(api_key=api_key, force_fallback=force_fallback)
         self._scorer = SeverityScorer(api_key=api_key, force_fallback=force_fallback)
@@ -148,7 +147,7 @@ class Orchestrator:
             compliance=compliance,
             enriched_by=enriched_by,
             confidence_score=confidence,
-            enriched_at=datetime.now(timezone.utc),
+            enriched_at=datetime.now(UTC),
         )
 
 
@@ -158,7 +157,6 @@ class Orchestrator:
 
 def _build_compliance_tag(result) -> ComplianceTag:  # type: ignore[no-untyped-def]
     """Convert ComplianceResult dataclass → ComplianceTag Pydantic model."""
-    from agents.compliance_tagger import ComplianceResult
 
     medtech = None
     fintech = None

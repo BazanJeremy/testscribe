@@ -3,14 +3,9 @@
 from __future__ import annotations
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from agents.compliance_tagger import (
     ComplianceTagger,
-    ComplianceResult,
-    _tag_medtech,
-    _tag_fintech,
 )
 
 

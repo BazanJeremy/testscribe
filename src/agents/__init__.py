@@ -1,5 +1,5 @@
-from .report_enricher import ReportEnricher, EnrichmentResult
-from .severity_scorer import SeverityScorer, SeverityResult
+from .report_enricher import EnrichmentResult, ReportEnricher
+from .severity_scorer import SeverityResult, SeverityScorer
 
 __all__ = [
     "ReportEnricher",

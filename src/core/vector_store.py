@@ -7,10 +7,8 @@ See ADR-001 for rationale.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import chromadb
 import numpy as np
@@ -38,7 +36,7 @@ class VectorStore:
 
     def __init__(
         self,
-        persist_path: Optional[str | Path] = None,
+        persist_path: str | Path | None = None,
         collection_name: str = COLLECTION_NAME,
     ) -> None:
         if persist_path:
@@ -64,7 +62,7 @@ class VectorStore:
         embedding: NDArray[np.float32],
         pattern: str,
         sector: str,
-        extra_metadata: Optional[dict] = None,
+        extra_metadata: dict | None = None,
     ) -> None:
         metadata: dict = {"pattern": pattern, "sector": sector}
         if extra_metadata:
@@ -90,7 +88,7 @@ class VectorStore:
         if not bug_ids:
             return
         metadatas = [
-            {"pattern": p, "sector": s} for p, s in zip(patterns, sectors)
+            {"pattern": p, "sector": s} for p, s in zip(patterns, sectors, strict=False)
         ]
         self._col.upsert(
             ids=bug_ids,
@@ -107,7 +105,7 @@ class VectorStore:
         self,
         query_embedding: NDArray[np.float32],
         n_results: int = 5,
-        sector_filter: Optional[str] = None,
+        sector_filter: str | None = None,
     ) -> list[SearchResult]:
         count = self._col.count()
         if count == 0:
@@ -137,7 +135,7 @@ class VectorStore:
         metas = result.get("metadatas", [[]])[0]
         distances = result.get("distances", [[]])[0]
 
-        for bug_id, doc, meta, dist in zip(ids, docs, metas, distances):
+        for bug_id, doc, meta, dist in zip(ids, docs, metas, distances, strict=False):
             out.append(
                 SearchResult(
                     bug_id=bug_id,

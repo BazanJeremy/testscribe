@@ -7,8 +7,8 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from agents.pattern_classifier import (
-    PatternClassifier,
     ClassificationResult,
+    PatternClassifier,
     _classify_keyword,
     _load_pattern_library,
 )

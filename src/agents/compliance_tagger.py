@@ -13,7 +13,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 try:
     import anthropic
@@ -36,7 +36,7 @@ class MedtechTag:
 
 @dataclass
 class FintechTag:
-    psd2_article: Optional[str]
+    psd2_article: str | None
     dora_risk_level: Literal["low", "medium", "high"]
     aml_flag: bool
     incident_reporting_required: bool
@@ -46,8 +46,8 @@ class FintechTag:
 @dataclass
 class ComplianceResult:
     sector: Sector
-    medtech: Optional[MedtechTag] = None
-    fintech: Optional[FintechTag] = None
+    medtech: MedtechTag | None = None
+    fintech: FintechTag | None = None
     tagged_by: str = "rule-based-fallback"
 
 
@@ -94,11 +94,9 @@ def _tag_medtech(text: str, pattern: str = "", severity_priority: str = "medium"
         rationale = "No injury risk identified; defect affects administrative functionality only."
 
     soup = bool(_SOUP_RE.search(combined))
-    # Class A: no change control regardless of other signals
-    if iec_class == "A":
-        change_ctrl = False
-    else:
-        change_ctrl = True  # Class B or C always requires change control
+    # Class A: no change control regardless of other signals;
+    # Class B or C always requires change control
+    change_ctrl = iec_class != "A"
 
     # Derive traceability tag from pattern
     pattern_map = {
@@ -168,7 +166,7 @@ _INCIDENT_REPORTING_RE = re.compile(
 def _tag_fintech(text: str, pattern: str = "", severity_priority: str = "medium") -> FintechTag:
     combined = f"{text} {pattern}"
 
-    psd2_article: Optional[str] = None
+    psd2_article: str | None = None
     for psd2_re, article in _PSD2_RULES:
         if psd2_re.search(combined):
             psd2_article = article
@@ -243,7 +241,7 @@ def _claude_tag(system: str, text: str, api_key: str) -> dict:
 class ComplianceTagger:
     """Auto-selects Claude or rule-based compliance tagging."""
 
-    def __init__(self, api_key: Optional[str] = None, force_fallback: bool = False):
+    def __init__(self, api_key: str | None = None, force_fallback: bool = False):
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self._force_fallback = force_fallback
 
@@ -253,7 +251,7 @@ class ComplianceTagger:
         sector: Sector,
         pattern: str = "",
         severity_priority: str = "medium",
-        title: Optional[str] = None,
+        title: str | None = None,
     ) -> ComplianceResult:
         combined = f"{title or ''} {description}"
 

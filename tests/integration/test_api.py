@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import pytest
-
 import sys
 from pathlib import Path
+
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from api.app import app as flask_app
@@ -40,7 +40,7 @@ class TestHealth:
         assert r.status_code == 200
 
     def test_health_has_status_ok(self, client):
-        data = r = client.get("/health").get_json()
+        data = client.get("/health").get_json()
         assert data["status"] == "ok"
 
     def test_health_has_timestamp(self, client):

@@ -1,12 +1,12 @@
-from .raw_report import RawReport
 from .enriched_report import (
-    CVSSLiteScore,
     ComplianceTag,
+    CVSSLiteScore,
     EnrichedReport,
     FintechCompliance,
     MedtechCompliance,
     SimilarBug,
 )
+from .raw_report import RawReport
 
 __all__ = [
     "RawReport",

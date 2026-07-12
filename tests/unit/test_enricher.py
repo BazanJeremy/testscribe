@@ -2,19 +2,16 @@
 
 from __future__ import annotations
 
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from agents.report_enricher import (
     ReportEnricher,
-    enrich_rule_based,
-    _extract_environment,
     _build_steps,
+    _extract_environment,
     _generate_title,
+    enrich_rule_based,
 )
-from schemas import RawReport
-
 
 # ---------------------------------------------------------------------------
 # Environment extraction

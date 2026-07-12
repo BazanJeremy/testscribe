@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from schemas import RawReport
 from agents import ReportEnricher, SeverityScorer
+from schemas import RawReport
 
 DATA_PATH = Path(__file__).parent.parent / "src" / "data" / "seed_reports.json"
 

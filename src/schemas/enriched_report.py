@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
-from typing import Literal, Optional
-from pydantic import BaseModel, Field
+    return datetime.now(UTC)
 
 
 class CVSSLiteScore(BaseModel):
@@ -39,7 +40,7 @@ class MedtechCompliance(BaseModel):
 class FintechCompliance(BaseModel):
     """PSD2 / DORA operational risk tags."""
 
-    psd2_article: Optional[str] = Field(
+    psd2_article: str | None = Field(
         default=None,
         description="Relevant PSD2 article (e.g. 'Art.97 - Strong Authentication')",
     )
@@ -52,8 +53,8 @@ class ComplianceTag(BaseModel):
     """Sector-specific compliance classification."""
 
     sector: Literal["medtech", "fintech", "generic"]
-    medtech: Optional[MedtechCompliance] = None
-    fintech: Optional[FintechCompliance] = None
+    medtech: MedtechCompliance | None = None
+    fintech: FintechCompliance | None = None
 
 
 class SimilarBug(BaseModel):

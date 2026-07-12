@@ -10,13 +10,11 @@ See ADR-002 for rationale.
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import normalize
-
 
 # ---------------------------------------------------------------------------
 # TF-IDF backend (always available)
@@ -28,7 +26,7 @@ class TfidfEmbedder:
     _DIM = 512  # Fixed output dimension via truncated/padded TF-IDF vocabulary
 
     def __init__(self) -> None:
-        self._vectorizer: Optional[TfidfVectorizer] = None
+        self._vectorizer: TfidfVectorizer | None = None
         self._fitted = False
 
     def fit(self, corpus: list[str]) -> None:
@@ -109,13 +107,13 @@ class Embedder:
     def __init__(
         self,
         force_tfidf: bool = False,
-        seed_corpus: Optional[list[str]] = None,
+        seed_corpus: list[str] | None = None,
     ) -> None:
         use_neural = (
             not force_tfidf
             and os.environ.get("USE_NEURAL_EMBEDDINGS", "").lower() == "true"
         )
-        self._neural: Optional[NeuralEmbedder] = None
+        self._neural: NeuralEmbedder | None = None
         self._tfidf = TfidfEmbedder()
 
         if use_neural:

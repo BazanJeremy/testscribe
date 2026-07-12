@@ -9,7 +9,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 try:
     import anthropic
@@ -139,7 +139,7 @@ def _infer_regression(text: str) -> RegressionType:
 
 def score_rule_based(
     description: str,
-    title: Optional[str] = None,
+    title: str | None = None,
 ) -> SeverityResult:
     """Deterministic CVSS-lite scoring — no API key required."""
     combined = f"{title or ''} {description}"
@@ -178,8 +178,8 @@ Return ONLY the JSON object. No markdown, no explanation."""
 
 def score_with_claude(
     description: str,
-    title: Optional[str] = None,
-    api_key: Optional[str] = None,
+    title: str | None = None,
+    api_key: str | None = None,
 ) -> SeverityResult:
     """Score using claude-sonnet-4-6. Raises on API failure."""
     if not _ANTHROPIC_AVAILABLE:
@@ -233,14 +233,14 @@ def score_with_claude(
 class SeverityScorer:
     """Auto-selects Claude or rule-based fallback."""
 
-    def __init__(self, api_key: Optional[str] = None, force_fallback: bool = False):
+    def __init__(self, api_key: str | None = None, force_fallback: bool = False):
         self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self._force_fallback = force_fallback
 
     def score(
         self,
         description: str,
-        title: Optional[str] = None,
+        title: str | None = None,
     ) -> SeverityResult:
         if self._force_fallback or not self._api_key:
             return score_rule_based(description, title)
