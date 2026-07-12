@@ -15,7 +15,7 @@ similarity search. Two embedding strategies were evaluated: a lightweight TF-IDF
 ## Decision Drivers
 
 - CI pipeline must pass with zero network access (no HuggingFace downloads)
-- Deterministic fallback pattern established in P1 and P2 is non-negotiable
+- Deterministic fallback pattern established in Anomaly Sentinel and SkyGuard is non-negotiable
 - Embedding quality must be sufficient for technical QA vocabulary
 - Model size must not add unreasonable cold-start overhead in tests
 
