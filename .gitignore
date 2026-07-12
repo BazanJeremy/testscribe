@@ -14,3 +14,7 @@ dist/
 build/
 .venv/
 venv/
+
+# Local AI-workflow files — not part of the public repository
+CLAUDE.md
+AUDIT-testscribe.md
