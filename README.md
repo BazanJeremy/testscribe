@@ -1,4 +1,4 @@
-# ⚡ TestScribe — AI-powered Bug Report Enricher
+# ⚡ TestScribe — Enrichissement de bug reports assisté par IA
 
 ![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.12%2B-blue)
@@ -6,13 +6,17 @@
 ![Coverage](https://img.shields.io/badge/coverage-84%25-yellowgreen)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-> *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and semantic duplicate detection — in under 100ms.
+🇬🇧 **[English version](README.en.md)**
+
+> *« button doesn't work »* → rapport de défaut structuré : sévérité CVSS-lite, classification IEC 62304, détection sémantique de doublons — en moins de 100 ms.
+
+**L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine. Projet P3 d'un portfolio de 6 consacré à l'AI Test Engineering.
 
 ---
 
-## The Problem
+## Le problème
 
-Every QA team receives bug reports like these every week:
+Toute équipe QA reçoit chaque semaine des signalements de ce type :
 
 ```
 "button doesn't work"
@@ -20,181 +24,123 @@ Every QA team receives bug reports like these every week:
 "search not working sometimes"
 ```
 
-These reports are **useless without context**. A QA engineer spends 10–30 minutes turning each one into a structured defect ticket. TestScribe automates that enrichment using a four-agent AI pipeline, with deterministic fallback so it runs in CI without an API key.
+Inexploitables en l'état. Reconstituer un ticket de défaut structuré — titre, étapes de reproduction, sévérité, doublons éventuels — coûte 10 à 30 minutes par signalement. Et en secteur régulé (medtech, fintech), la qualification réglementaire arrive souvent trop tard dans le cycle.
 
-**Inspired by Andrej Karpathy's Software 2.0 principle**: replacing manual, rule-based work with learned representations — here applied to QA artefacts.
-
----
-
-## What It Does
-
-```
-Raw input:  "The infusion pump alarm doesn't sound when the line is blocked."
-
-Output:
-  Title:   Infusion pump alarm silent on IV occlusion
-  Pattern: SAFETY_CRITICAL
-  Steps:   Given the user has access to alarm-subsystem
-           When The occlusion alarm does not sound when IV line is blocked
-           Then the observed behaviour differs from expected
-  CVSS-lite score: 9.0 / 10  →  CRITICAL
-  IEC 62304 Class: C  (change control required, SOUP impact: No)
-  Similar bugs: RAW-001 (0.94 similarity)  →  Duplicate probability: 89%
-```
+TestScribe automatise cette **pré-qualification**. Le jugement, lui, n'est pas automatisé.
 
 ---
 
-## Architecture
+## L'approche
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  LAYER 1 — INGESTION                                            │
-│  Raw text · JSON · CSV · Flask POST /api/enrich                 │
-└─────────────────┬───────────────────────────────────────────────┘
-                  │  RawReport (Pydantic v2 validated)
-                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  Enrichment Orchestrator  (src/core/orchestrator.py)            │
-│  routes · normalises · merges all agent outputs                 │
-└──────┬─────────────┬──────────────┬──────────────┬─────────────┘
-       │             │              │              │
-       ▼             ▼              ▼              ▼
-┌──────────┐ ┌────────────┐ ┌──────────────┐ ┌───────────────┐
-│ Report   │ │ Severity   │ │ Pattern      │ │ Compliance    │
-│ Enricher │ │ Scorer     │ │ Classifier   │ │ Tagger        │
-│          │ │            │ │              │ │               │
-│ steps    │ │ CVSS-lite  │ │ TF-IDF +     │ │ IEC 62304 A/B/C│
-│ env      │ │ 0–10 score │ │ ChromaDB RAG │ │ PSD2 / DORA   │
-│ summary  │ │ priority   │ │ dup detect   │ │ AML flag      │
-└──────────┘ └────────────┘ └──────┬───────┘ └───────────────┘
-                                   │
-                         ┌─────────▼─────────┐
-                         │  ChromaDB          │
-                         │  TF-IDF embeddings │
-                         │  semantic search   │
-                         └───────────────────┘
-  ┌── FALLBACK ─────────────────────────────────────────────────┐
-  │  All agents: deterministic rule-based fallback               │
-  │  CI runs green without ANTHROPIC_API_KEY                     │
-  └─────────────────────────────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│  LAYER 3 — OUTPUT                                               │
-│  EnrichedReport (Pydantic v2) · Flask API · Dashboard          │
-└─────────────────────────────────────────────────────────────────┘
+Rapport brut  (texte libre · JSON · CSV · POST /api/enrich)
+      │   RawReport — validation Pydantic v2
+      ▼
+Orchestrateur (src/core/orchestrator.py)
+      ├── ReportEnricher      titre normalisé · steps Given/When/Then · environnement
+      ├── SeverityScorer      score CVSS-lite 0–10 · priorité
+      ├── PatternClassifier   RAG ChromaDB + TF-IDF · 9 patterns · doublons
+      └── ComplianceTagger    IEC 62304 (medtech) · PSD2 / DORA (fintech)
+      │   EnrichedReport — validation Pydantic v2
+      ▼
+Dashboard Flask — revue et arbitrage par le QA
+```
+
+Chaque agent fonctionne en deux modes :
+
+- **Mode LLM** — `claude-sonnet-4-6` (SDK Anthropic), sortie JSON validée par Pydantic ;
+- **Fallback déterministe** — règles explicites, sans clé API : la CI tourne verte, coût zéro, résultats reproductibles.
+
+Ce fallback n'est pas un pis-aller, c'est une exigence d'architecture : un outil qualité dont la suite de tests dépend d'un service externe n'est pas un outil qualité.
+
+---
+
+## Exemple concret
+
+```
+Entrée brute :  "The infusion pump alarm doesn't sound when the line is blocked."
+
+Sortie :
+  Titre    : Infusion pump alarm silent on IV occlusion
+  Pattern  : SAFETY_CRITICAL
+  Steps    : Given the user has access to alarm-subsystem
+             When The occlusion alarm does not sound when IV line is blocked
+             Then the observed behaviour differs from expected
+  CVSS-lite : 9.0 / 10  →  CRITICAL
+  IEC 62304 : Classe C  (change control requis, impact SOUP : non)
+  Doublons  : RAW-001 (similarité 0.94)  →  probabilité de doublon : 89 %
 ```
 
 ---
 
-## AI Skills Demonstrated
+## Le rôle du QA : l'IA propose, le QA arbitre
 
-| Skill | Where |
-|-------|-------|
-| **LLM structured output** | All agents: Claude returns validated JSON via Pydantic v2 |
-| **RAG (Retrieval-Augmented Generation)** | `PatternClassifier`: TF-IDF embeddings → ChromaDB → semantic neighbour search |
-| **Deterministic fallback** | Every agent has a rule-based fallback; CI never needs an API key |
-| **Multi-agent orchestration** | `Orchestrator` coordinates 4 specialised agents into a single pipeline |
-| **Sector-specific compliance** | `ComplianceTagger`: IEC 62304 (medtech) + PSD2/DORA (fintech) |
-| **Property-based testing** | Hypothesis fuzzing on all agents and schemas |
+Chaque sortie de TestScribe est une **proposition**, jamais une décision :
 
----
+| Sortie de TestScribe | Statut | La décision qui reste humaine |
+|---|---|---|
+| Score CVSS-lite + priorité | pré-classement | la sévérité finale du ticket |
+| Steps Given/When/Then | proposition de reproduction | la reproduction effective du bug |
+| Probabilité de doublon | signal | fusionner ou non les tickets |
+| Tags IEC 62304 / PSD2-DORA | pré-qualification | la position réglementaire — jamais soumise telle quelle à un audit |
 
-## Tech Stack
+**Traçabilité intégrale** : chaque rapport enrichi porte un champ `enriched_by` (`claude-sonnet-4-6` ou `rule-based-fallback`) et un `confidence_score`. Le QA sait toujours *qui* a produit *quoi*, avec quelle confiance. L'exact opposé d'une boîte noire.
 
-```
-Python 3.12       Pydantic v2      Flask 3.x
-Anthropic SDK     ChromaDB 0.5     scikit-learn (TF-IDF)
-Pytest            Hypothesis       Allure
-GitHub Actions    Docker           sentence-transformers (optional)
-```
+### Ce que TestScribe ne fait pas
 
----
+- Il ne décide pas de la sévérité finale.
+- Il ne clôt aucun ticket.
+- Il ne remplace pas la reproduction manuelle du bug.
+- Il ne délivre aucun avis de conformité réglementaire.
+- Il ne génère pas de cas de test.
 
-## Bugs Caught by Tests (Portfolio Evidence)
-
-This project follows the principle: **tests that find real bugs are assets, not noise**.
-
-### S1 — Two bugs caught during initial build
-
-| Bug | Test that caught it | Root cause | Fix |
-|-----|---------------------|------------|-----|
-| `"not always"` → scored as `always` reproducibility | `test_intermittent_is_sometimes` | `_ALWAYS_REPRO_KEYWORDS` regex matched `always` inside `"not always"` | Added negative lookbehind: `(?<!not )\balways\b` |
-| Infusion pump alarm → `high` instead of `critical` | `test_alarm_bug_scores_critical` | Critical threshold too conservative (8.5) | Lowered to 8.0 — aligns with medtech safety expectations |
-
-### S2 — One bug caught during compliance agent build
-
-| Bug | Test that caught it | Root cause | Fix |
-|-----|---------------------|------------|-----|
-| UI cosmetic bug → IEC 62304 class B + `change_control=True` | `test_class_a_no_change_control` | `_IEC_CLASS_B_RE` matched generic word `report` in "report page" | Tightened regex to `patient.report`, `audit.log`, `medical.image`; class A always sets `change_control=False` |
+TestScribe supprime le temps de rédaction et de pré-qualification — pas le jugement.
 
 ---
 
-## Project Structure
+## L'outil IA est lui-même sous contrôle QA
 
-```
-testscribe/
-├── src/
-│   ├── agents/
-│   │   ├── report_enricher.py     # Agent 1: Given/When/Then + env detection
-│   │   ├── severity_scorer.py     # Agent 2: CVSS-lite 0–10 scoring
-│   │   ├── pattern_classifier.py  # Agent 3: RAG + ChromaDB semantic search
-│   │   └── compliance_tagger.py   # Agent 4: IEC 62304 + PSD2/DORA
-│   ├── schemas/
-│   │   ├── raw_report.py          # Pydantic v2 input validation
-│   │   └── enriched_report.py     # Pydantic v2 structured output
-│   ├── core/
-│   │   ├── orchestrator.py        # Pipeline coordinator
-│   │   ├── embedder.py            # TF-IDF / sentence-transformers facade
-│   │   └── vector_store.py        # ChromaDB client (external embeddings)
-│   ├── api/
-│   │   └── app.py                 # Flask REST API + dashboard
-│   └── data/
-│       ├── seed_reports.json      # 30 realistic bug reports (medtech/fintech/generic)
-│       └── pattern_library.json   # 9 pattern definitions + keywords
-├── tests/
-│   ├── unit/                      # 121 unit tests + property-based (Hypothesis)
-│   ├── integration/               # 23 API contract tests
-│   └── conftest.py
-├── docs/
-│   ├── ADR-001-chromadb-vs-faiss.md
-│   ├── ADR-002-embeddings-choice.md
-│   └── ADR-003-cvss-lite-scoring.md
-├── demo.py                        # Standalone demo — no API key required
-├── .github/workflows/ci.yml       # CI: lint → unit → integration → Allure
-├── docker-compose.yml
-└── requirements.txt
-```
+Trois bugs réels du pipeline ont été attrapés par la suite de tests pendant le développement — process complet à chaque fois : *test caught it → analyzed → fixed → regression-tested*.
+
+| Bug | Test qui l'a attrapé | Correctif |
+|---|---|---|
+| `"not always"` scoré comme reproductible `always` | `test_intermittent_is_sometimes` | lookbehind négatif : `(?<!not )\balways\b` |
+| Alarme de pompe à perfusion scorée `high` au lieu de `critical` | `test_alarm_bug_scores_critical` | seuil critique abaissé 8.5 → 8.0 |
+| Bug cosmétique UI classé IEC 62304 classe B | `test_class_a_no_change_control` | regex classe B resserrée ; classe A sans change control |
+
+144 tests (121 unitaires dont property-based avec Hypothesis, 23 d'intégration API), CI en 5 jobs sans clé API, décisions d'architecture tracées en ADRs. Le niveau d'exigence qu'on applique à un logiciel régulé, appliqué à l'outil IA lui-même.
 
 ---
 
-## Quick Start
+## Démo locale
 
 ```bash
-# Clone and install
 git clone https://github.com/BazanJeremy/testscribe.git
 cd testscribe
 python -m venv .venv && .venv\Scripts\activate   # Windows
 pip install -r requirements.txt
 
-# Run the demo (no API key needed)
+# Démo — 30 rapports seed, aucune clé API requise
 python demo.py
 python demo.py --sector medtech --verbose
 python demo.py --sector fintech --json-out enriched.json
 
-# Run tests
-python -m pytest tests/
+# Tests
+python -m pytest
 
-# Start the dashboard
+# Dashboard
 python src/api/app.py
 # → http://localhost:5000
+```
 
-# With Claude API (optional — agents fall back automatically without it)
+Avec clé API (optionnel — fallback automatique sans) :
+
+```powershell
 $env:ANTHROPIC_API_KEY="sk-ant-..."
 python src/api/app.py
 ```
 
-### Docker
+Docker :
 
 ```bash
 docker-compose up
@@ -203,91 +149,38 @@ docker-compose up
 
 ---
 
-## API Reference
+## Stack technique
 
-### `POST /api/enrich`
-
-```json
-{
-  "description": "The login button does nothing on Firefox",
-  "title": "Login button non-responsive",
-  "component": "authentication",
-  "sector": "fintech"
-}
+```
+Python 3.12+      Pydantic v2      Flask 3.x
+SDK Anthropic     ChromaDB         scikit-learn (TF-IDF)
+pytest            Hypothesis       Allure
+GitHub Actions    Docker
 ```
 
-**Response 201:**
+---
 
-```json
-{
-  "id": "TS-A1B2C3D4",
-  "title": "Login button non-responsive on Firefox",
-  "pattern": "AUTH_FLOW",
-  "severity": { "score": 5.1, "priority": "medium", "functional_impact": "partial" },
-  "compliance": { "sector": "fintech", "fintech": { "psd2_article": "Art.97 — Session Security", "dora_risk_level": "medium" } },
-  "reproduction_steps": ["Given the user navigates to authentication", "When Login button does nothing on Firefox", "Then the observed behaviour differs from expected"],
-  "similar_bugs": [{ "bug_id": "RAW-020", "similarity_score": 0.72, "pattern": "AUTH_FLOW" }],
-  "duplicate_probability": 0.42,
-  "enriched_by": "rule-based-fallback",
-  "confidence_score": 0.57
-}
-```
+## Limites explicites
 
-### `POST /api/enrich/batch`
-
-Send an array of report objects. Partial success — each item enriched independently.
-
-### `GET /api/reports?sector=medtech&priority=critical&pattern=SAFETY_CRITICAL`
-
-### `GET /api/trends`
-
-Returns pattern/priority/sector distribution across all enriched reports.
+- Les heuristiques du fallback sont calibrées sur 30 rapports seed — pas sur un corpus industriel.
+- TF-IDF capte la similarité lexicale, pas la sémantique fine. Choix assumé ([ADR-002](docs/ADR-002-embeddings-choice.md)) : zéro dépendance réseau en CI, déterminisme ; la montée vers sentence-transformers est documentée.
+- Les tags de conformité sont une aide à la qualification, pas un avis réglementaire.
+- Le mode fallback produit des sorties plus pauvres que le mode LLM (règles à mots-clés, pas de reformulation).
+- Corpus, patterns et sorties en anglais uniquement.
 
 ---
 
-## Supported Patterns
+## Décisions d'architecture
 
-| Pattern | Description |
-|---------|-------------|
-| `SAFETY_CRITICAL` | Patient safety, alarm failures, device malfunction (medtech) |
-| `SECURITY` | Injection, bypass, privilege escalation |
-| `AUTH_FLOW` | Login, session, 2FA, token, password |
-| `DATA_VALIDATION` | Input validation, boundary conditions, IBAN, format |
-| `DATA_INTEGRITY` | Data loss, duplication, sync failures |
-| `COMPLIANCE_REGULATORY` | Audit, e-signature, PSD2 notification, reporting |
-| `PERFORMANCE` | Timeouts, freezes, crashes under load |
-| `INTEGRATION` | Third-party API, DICOM, HL7, feed failures |
-| `UI_REGRESSION` | Layout, rendering, responsive design |
+- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB plutôt que FAISS : API simple, persistance, filtrage par métadonnées pour l'isolation par secteur
+- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF par défaut, sentence-transformers en option : CI sans réseau, neural disponible en production
+- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapté au QA : 4 dimensions calibrées sur les exigences de sécurité medtech
 
 ---
 
-## Architectural Decisions
+## Auteur
 
-- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB over FAISS: simpler API, persistent storage, filter-by-metadata for sector isolation
-- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF default with sentence-transformers upgrade path: CI-safe without network, neural available in production
-- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapted for QA: 4 dimensions (functional_impact, reproducibility, user_scope, regression_type) calibrated against medtech safety expectations
-
----
-
-## Sector Adaptations
-
-### Medtech (IEC 62304)
-
-- Class C: alarm failures, dosage errors, vital signs, infusion pumps → change control required
-- Class B: authentication, audit logs, e-signatures, DICOM → change control required
-- Class A: UI/cosmetic, administrative → no change control
-- SOUP (Software of Unknown Provenance) detection: DICOM viewers, HL7, third-party scanners
-
-### Fintech (PSD2 / DORA)
-
-- PSD2 article mapping: Art.97 (SCA, session), Art.36 (payments), Art.80 (IBAN), Art.88 (fraud)
-- DORA operational risk level: high for payment/session failures, medium for data accuracy
-- AML flag: account freeze bypass, large transaction notification failures
-
----
-
-## Author
-
-**Jérémy Bazan** — QA Engineer · AI Test Engineer  
-ISTQB Foundation v4 · MCP in production  
-[GitHub](https://github.com/BazanJeremy) · Lyon, France → Switzerland / Full Remote
+**Jérémy Bazan** — QA Engineer · AI Test Engineering
+ISTQB Foundation v4 · MCP en production
+[LinkedIn](https://www.linkedin.com/in/jeremy-bazan/) · [GitHub](https://github.com/BazanJeremy)
+Lyon, France → Suisse romande / full remote
