@@ -9,7 +9,7 @@
 
 > 🇫🇷 [Version française](README.md)
 
-**AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human.
+**AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human. Downstream, the enriched reports serve as an evaluation use case for [EvalForge](https://github.com/BazanJeremy/EvalForge) — soft interop, no runtime coupling.
 
 ---
 
@@ -323,6 +323,19 @@ Returns pattern/priority/sector distribution across all enriched reports.
 - Corpus, patterns and outputs are English-only.
 
 ---
+
+## Related projects
+
+These tools share the same principles: **deterministic first, AI where it earns its place — the QA stays the arbiter.** All run locally, no API keys required.
+
+| Project | Focus |
+|---|---|
+| [EvalForge](https://github.com/BazanJeremy/EvalForge) | LLM evaluation & judge calibration |
+| [ReleaseGuard](https://github.com/BazanJeremy/ReleaseGuard) | Explainable GO/NO-GO release gate |
+| [FlakySense](https://github.com/BazanJeremy/flakysense) | Statistical flaky-test diagnosis |
+| [Anomaly Sentinel](https://github.com/BazanJeremy/anomaly-sentinel) | Testing AI anomaly-detection systems (medtech · fintech) |
+| [TestScribe](https://github.com/BazanJeremy/testscribe) **← this repo** | AI-assisted bug report enrichment |
+| [SkyGuard](https://github.com/BazanJeremy/skyguard) | Security quality gate for critical avionics systems |
 
 ## Author
 

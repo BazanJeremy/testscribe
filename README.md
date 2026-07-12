@@ -9,7 +9,7 @@
 
 > 🇬🇧 [English version](README.en.md)
 
-**L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine.
+**L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine. En aval, les rapports enrichis servent de cas d'usage d'évaluation pour [EvalForge](https://github.com/BazanJeremy/EvalForge) — interopérabilité souple, aucun couplage à l'exécution.
 
 ---
 
@@ -176,6 +176,19 @@ GitHub Actions    Docker
 - **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapté au QA : 4 dimensions calibrées sur les exigences de sécurité medtech
 
 ---
+
+## Projets associés
+
+Ces outils partagent les mêmes principes : **le déterministe d'abord, l'IA là où elle apporte — le QA reste l'arbitre.** Tous tournent en local, aucune clé API requise.
+
+| Projet | Focus |
+|---|---|
+| [EvalForge](https://github.com/BazanJeremy/EvalForge) | Évaluation de LLM & calibration du juge |
+| [ReleaseGuard](https://github.com/BazanJeremy/ReleaseGuard) | Verrou de release GO/NO-GO explicable |
+| [FlakySense](https://github.com/BazanJeremy/flakysense) | Diagnostic statistique des tests flaky |
+| [Anomaly Sentinel](https://github.com/BazanJeremy/anomaly-sentinel) | Tester les IA de détection d'anomalies (medtech · fintech) |
+| [TestScribe](https://github.com/BazanJeremy/testscribe) **← ce repo** | Enrichissement de bug reports assisté par IA |
+| [SkyGuard](https://github.com/BazanJeremy/skyguard) | Quality gate sécurité pour systèmes critiques avioniques |
 
 ## Auteur
 
