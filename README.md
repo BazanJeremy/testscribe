@@ -11,8 +11,6 @@
 
 **L'IA propose, le QA arbitre.** TestScribe est le maillon aval d'un flux qualité outillé par IA : il pré-qualifie les défauts entrants, la décision reste humaine. En aval, les rapports enrichis servent de cas d'usage d'évaluation pour [EvalForge](https://github.com/BazanJeremy/EvalForge) — interopérabilité souple, aucun couplage à l'exécution.
 
----
-
 ## Le problème
 
 Toute équipe QA reçoit chaque semaine des signalements de ce type :
@@ -27,9 +25,16 @@ Inexploitables en l'état. Reconstituer un ticket de défaut structuré — titr
 
 TestScribe automatise cette **pré-qualification**. Le jugement, lui, n'est pas automatisé.
 
----
+## Comment ça marche
 
-## L'approche
+Chaque agent fonctionne en deux modes :
+
+- **Mode LLM** — `claude-sonnet-4-6` (SDK Anthropic), sortie JSON validée par Pydantic ;
+- **Fallback déterministe** — règles explicites, sans clé API : la CI tourne verte, coût zéro, résultats reproductibles.
+
+Ce fallback n'est pas un pis-aller, c'est une exigence d'architecture : un outil qualité dont la suite de tests dépend d'un service externe n'est pas un outil qualité.
+
+## Architecture
 
 ```
 Rapport brut  (texte libre · JSON · CSV · POST /api/enrich)
@@ -44,15 +49,6 @@ Orchestrateur (src/core/orchestrator.py)
       ▼
 Dashboard Flask — revue et arbitrage par le QA
 ```
-
-Chaque agent fonctionne en deux modes :
-
-- **Mode LLM** — `claude-sonnet-4-6` (SDK Anthropic), sortie JSON validée par Pydantic ;
-- **Fallback déterministe** — règles explicites, sans clé API : la CI tourne verte, coût zéro, résultats reproductibles.
-
-Ce fallback n'est pas un pis-aller, c'est une exigence d'architecture : un outil qualité dont la suite de tests dépend d'un service externe n'est pas un outil qualité.
-
----
 
 ## Exemple concret
 
@@ -69,8 +65,6 @@ Sortie :
   IEC 62304 : Classe C  (change control requis, impact SOUP : non)
   Doublons  : RAW-001 (similarité 0.94)  →  probabilité de doublon : 89 %
 ```
-
----
 
 ## Le rôle du QA : l'IA propose, le QA arbitre
 
@@ -95,8 +89,6 @@ Chaque sortie de TestScribe est une **proposition**, jamais une décision :
 
 TestScribe supprime le temps de rédaction et de pré-qualification — pas le jugement.
 
----
-
 ## L'outil IA est lui-même sous contrôle QA
 
 Trois bugs réels du pipeline ont été attrapés par la suite de tests pendant le développement — process complet à chaque fois : *test caught it → analyzed → fixed → regression-tested*.
@@ -109,14 +101,21 @@ Trois bugs réels du pipeline ont été attrapés par la suite de tests pendant 
 
 144 tests (121 unitaires dont property-based avec Hypothesis, 23 d'intégration API), CI en 5 jobs sans clé API, décisions d'architecture tracées en ADRs. Le niveau d'exigence qu'on applique à un logiciel régulé, appliqué à l'outil IA lui-même.
 
----
+## Stack technique
 
-## Démo locale
+```
+Python 3.12+      Pydantic v2      Flask 3.x
+SDK Anthropic     ChromaDB         scikit-learn (TF-IDF)
+pytest            Hypothesis       Allure
+GitHub Actions    Docker
+```
+
+## Démarrage rapide
 
 ```bash
 git clone https://github.com/BazanJeremy/testscribe.git
 cd testscribe
-python -m venv .venv && .venv\Scripts\activate   # Windows
+python -m venv .venv && source .venv/bin/activate   # Windows : .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Démo — 30 rapports seed, aucune clé API requise
@@ -134,8 +133,8 @@ python src/api/app.py
 
 Avec clé API (optionnel — fallback automatique sans) :
 
-```powershell
-$env:ANTHROPIC_API_KEY="sk-ant-..."
+```bash
+export ANTHROPIC_API_KEY="sk-ant-..."   # Windows PowerShell : $env:ANTHROPIC_API_KEY="sk-ant-..."
 python src/api/app.py
 ```
 
@@ -146,36 +145,19 @@ docker-compose up
 # → http://localhost:5000
 ```
 
----
+## Décisions de conception
 
-## Stack technique
+- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB plutôt que FAISS : API simple, persistance, filtrage par métadonnées pour l'isolation par secteur
+- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF par défaut, sentence-transformers en option : CI sans réseau, neural disponible en production
+- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapté au QA : 4 dimensions calibrées sur les exigences de sécurité medtech
 
-```
-Python 3.12+      Pydantic v2      Flask 3.x
-SDK Anthropic     ChromaDB         scikit-learn (TF-IDF)
-pytest            Hypothesis       Allure
-GitHub Actions    Docker
-```
-
----
-
-## Limites explicites
+## Limites connues
 
 - Les heuristiques du fallback sont calibrées sur 30 rapports seed — pas sur un corpus industriel.
 - TF-IDF capte la similarité lexicale, pas la sémantique fine. Choix assumé ([ADR-002](docs/ADR-002-embeddings-choice.md)) : zéro dépendance réseau en CI, déterminisme ; la montée vers sentence-transformers est documentée.
 - Les tags de conformité sont une aide à la qualification, pas un avis réglementaire.
 - Le mode fallback produit des sorties plus pauvres que le mode LLM (règles à mots-clés, pas de reformulation).
 - Corpus, patterns et sorties en anglais uniquement.
-
----
-
-## Décisions d'architecture
-
-- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB plutôt que FAISS : API simple, persistance, filtrage par métadonnées pour l'isolation par secteur
-- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF par défaut, sentence-transformers en option : CI sans réseau, neural disponible en production
-- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapté au QA : 4 dimensions calibrées sur les exigences de sécurité medtech
-
----
 
 ## Projets associés
 

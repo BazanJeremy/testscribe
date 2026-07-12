@@ -11,9 +11,7 @@
 
 **AI proposes, the QA decides.** TestScribe is the downstream link of an AI-assisted quality workflow: it pre-qualifies incoming defects — the judgement stays human. Downstream, the enriched reports serve as an evaluation use case for [EvalForge](https://github.com/BazanJeremy/EvalForge) — soft interop, no runtime coupling.
 
----
-
-## The Problem
+## The problem
 
 Every QA team receives bug reports like these every week:
 
@@ -27,25 +25,16 @@ These reports are **useless without context**. A QA engineer spends 10–30 minu
 
 **Inspired by Andrej Karpathy's Software 2.0 principle**: replacing manual, rule-based work with learned representations — here applied to QA artefacts.
 
----
+## How it works
 
-## What It Does
-
-```
-Raw input:  "The infusion pump alarm doesn't sound when the line is blocked."
-
-Output:
-  Title:   Infusion pump alarm silent on IV occlusion
-  Pattern: SAFETY_CRITICAL
-  Steps:   Given the user has access to alarm-subsystem
-           When The occlusion alarm does not sound when IV line is blocked
-           Then the observed behaviour differs from expected
-  CVSS-lite score: 9.0 / 10  →  CRITICAL
-  IEC 62304 Class: C  (change control required, SOUP impact: No)
-  Similar bugs: RAW-001 (0.94 similarity)  →  Duplicate probability: 89%
-```
-
----
+| Capability | Where |
+|-------|-------|
+| **LLM structured output** | All agents: Claude returns validated JSON via Pydantic v2 |
+| **RAG (Retrieval-Augmented Generation)** | `PatternClassifier`: TF-IDF embeddings → ChromaDB → semantic neighbour search |
+| **Deterministic fallback** | Every agent has a rule-based fallback; CI never needs an API key |
+| **Multi-agent orchestration** | `Orchestrator` coordinates 4 specialised agents into a single pipeline |
+| **Sector-specific compliance** | `ComplianceTagger`: IEC 62304 (medtech) + PSD2/DORA (fintech) |
+| **Property-based testing** | Hypothesis fuzzing on all agents and schemas |
 
 ## Architecture
 
@@ -88,9 +77,23 @@ Output:
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+## What it does
 
-## The QA's Role — AI Proposes, the QA Decides
+```
+Raw input:  "The infusion pump alarm doesn't sound when the line is blocked."
+
+Output:
+  Title:   Infusion pump alarm silent on IV occlusion
+  Pattern: SAFETY_CRITICAL
+  Steps:   Given the user has access to alarm-subsystem
+           When The occlusion alarm does not sound when IV line is blocked
+           Then the observed behaviour differs from expected
+  CVSS-lite score: 9.0 / 10  →  CRITICAL
+  IEC 62304 Class: C  (change control required, SOUP impact: No)
+  Similar bugs: RAW-001 (0.94 similarity)  →  Duplicate probability: 89%
+```
+
+## The QA's role — AI proposes, the QA decides
 
 Every TestScribe output is a **proposal**, never a decision:
 
@@ -113,32 +116,6 @@ Every TestScribe output is a **proposal**, never a decision:
 
 TestScribe removes the writing and pre-qualification time — not the judgement.
 
----
-
-## AI Skills Demonstrated
-
-| Skill | Where |
-|-------|-------|
-| **LLM structured output** | All agents: Claude returns validated JSON via Pydantic v2 |
-| **RAG (Retrieval-Augmented Generation)** | `PatternClassifier`: TF-IDF embeddings → ChromaDB → semantic neighbour search |
-| **Deterministic fallback** | Every agent has a rule-based fallback; CI never needs an API key |
-| **Multi-agent orchestration** | `Orchestrator` coordinates 4 specialised agents into a single pipeline |
-| **Sector-specific compliance** | `ComplianceTagger`: IEC 62304 (medtech) + PSD2/DORA (fintech) |
-| **Property-based testing** | Hypothesis fuzzing on all agents and schemas |
-
----
-
-## Tech Stack
-
-```
-Python 3.12       Pydantic v2      Flask 3.x
-Anthropic SDK     ChromaDB 0.5     scikit-learn (TF-IDF)
-Pytest            Hypothesis       Allure
-GitHub Actions    Docker           sentence-transformers (optional)
-```
-
----
-
 ## Bugs caught by the test suite
 
 This project follows the principle: **tests that find real bugs are assets, not noise**.
@@ -156,82 +133,7 @@ This project follows the principle: **tests that find real bugs are assets, not 
 |-----|---------------------|------------|-----|
 | UI cosmetic bug → IEC 62304 class B + `change_control=True` | `test_class_a_no_change_control` | `_IEC_CLASS_B_RE` matched generic word `report` in "report page" | Tightened regex to `patient.report`, `audit.log`, `medical.image`; class A always sets `change_control=False` |
 
----
-
-## Project Structure
-
-```
-testscribe/
-├── src/
-│   ├── agents/
-│   │   ├── report_enricher.py     # Agent 1: Given/When/Then + env detection
-│   │   ├── severity_scorer.py     # Agent 2: CVSS-lite 0–10 scoring
-│   │   ├── pattern_classifier.py  # Agent 3: RAG + ChromaDB semantic search
-│   │   └── compliance_tagger.py   # Agent 4: IEC 62304 + PSD2/DORA
-│   ├── schemas/
-│   │   ├── raw_report.py          # Pydantic v2 input validation
-│   │   └── enriched_report.py     # Pydantic v2 structured output
-│   ├── core/
-│   │   ├── orchestrator.py        # Pipeline coordinator
-│   │   ├── embedder.py            # TF-IDF / sentence-transformers facade
-│   │   └── vector_store.py        # ChromaDB client (external embeddings)
-│   ├── api/
-│   │   └── app.py                 # Flask REST API + dashboard
-│   └── data/
-│       ├── seed_reports.json      # 30 realistic bug reports (medtech/fintech/generic)
-│       └── pattern_library.json   # 9 pattern definitions + keywords
-├── tests/
-│   ├── unit/                      # 121 unit tests + property-based (Hypothesis)
-│   ├── integration/               # 23 API contract tests
-│   └── conftest.py
-├── docs/
-│   ├── ADR-001-chromadb-vs-faiss.md
-│   ├── ADR-002-embeddings-choice.md
-│   └── ADR-003-cvss-lite-scoring.md
-├── demo.py                        # Standalone demo — no API key required
-├── .github/workflows/ci.yml       # CI: lint → unit → integration → Allure
-├── docker-compose.yml
-└── requirements.txt
-```
-
----
-
-## Quick Start
-
-```bash
-# Clone and install
-git clone https://github.com/BazanJeremy/testscribe.git
-cd testscribe
-python -m venv .venv && .venv\Scripts\activate   # Windows
-pip install -r requirements.txt
-
-# Run the demo (no API key needed)
-python demo.py
-python demo.py --sector medtech --verbose
-python demo.py --sector fintech --json-out enriched.json
-
-# Run tests
-python -m pytest tests/
-
-# Start the dashboard
-python src/api/app.py
-# → http://localhost:5000
-
-# With Claude API (optional — agents fall back automatically without it)
-$env:ANTHROPIC_API_KEY="sk-ant-..."
-python src/api/app.py
-```
-
-### Docker
-
-```bash
-docker-compose up
-# → http://localhost:5000
-```
-
----
-
-## API Reference
+## API reference
 
 ### `POST /api/enrich`
 
@@ -271,9 +173,7 @@ Send an array of report objects. Partial success — each item enriched independ
 
 Returns pattern/priority/sector distribution across all enriched reports.
 
----
-
-## Supported Patterns
+## Supported patterns
 
 | Pattern | Description |
 |---------|-------------|
@@ -287,17 +187,7 @@ Returns pattern/priority/sector distribution across all enriched reports.
 | `INTEGRATION` | Third-party API, DICOM, HL7, feed failures |
 | `UI_REGRESSION` | Layout, rendering, responsive design |
 
----
-
-## Architectural Decisions
-
-- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB over FAISS: simpler API, persistent storage, filter-by-metadata for sector isolation
-- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF default with sentence-transformers upgrade path: CI-safe without network, neural available in production
-- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapted for QA: 4 dimensions (functional_impact, reproducibility, user_scope, regression_type) calibrated against medtech safety expectations
-
----
-
-## Sector Adaptations
+## Sector adaptations
 
 ### Medtech (IEC 62304)
 
@@ -312,9 +202,55 @@ Returns pattern/priority/sector distribution across all enriched reports.
 - DORA operational risk level: high for payment/session failures, medium for data accuracy
 - AML flag: account freeze bypass, large transaction notification failures
 
----
+## Tech stack
 
-## Known Limitations
+```
+Python 3.12       Pydantic v2      Flask 3.x
+Anthropic SDK     ChromaDB 0.5     scikit-learn (TF-IDF)
+Pytest            Hypothesis       Allure
+GitHub Actions    Docker           sentence-transformers (optional)
+```
+
+## Quickstart
+
+```bash
+# Clone and install
+git clone https://github.com/BazanJeremy/testscribe.git
+cd testscribe
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Run the demo (no API key needed)
+python demo.py
+python demo.py --sector medtech --verbose
+python demo.py --sector fintech --json-out enriched.json
+
+# Run tests
+python -m pytest tests/
+
+# Start the dashboard
+python src/api/app.py
+# → http://localhost:5000
+
+# With Claude API (optional — agents fall back automatically without it)
+export ANTHROPIC_API_KEY="sk-ant-..."   # Windows PowerShell: $env:ANTHROPIC_API_KEY="sk-ant-..."
+python src/api/app.py
+```
+
+### Docker
+
+```bash
+docker-compose up
+# → http://localhost:5000
+```
+
+## Design decisions
+
+- **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB over FAISS: simpler API, persistent storage, filter-by-metadata for sector isolation
+- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF default with sentence-transformers upgrade path: CI-safe without network, neural available in production
+- **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapted for QA: 4 dimensions (functional_impact, reproducibility, user_scope, regression_type) calibrated against medtech safety expectations
+
+## Known limitations
 
 - Fallback heuristics are calibrated on 30 seed reports — not an industrial corpus.
 - TF-IDF captures lexical similarity, not fine-grained semantics. Deliberate trade-off ([ADR-002](docs/ADR-002-embeddings-choice.md)): zero network dependency in CI, deterministic results; the sentence-transformers upgrade path is documented.
@@ -322,7 +258,41 @@ Returns pattern/priority/sector distribution across all enriched reports.
 - Fallback mode produces poorer output than LLM mode (keyword rules, no rephrasing).
 - Corpus, patterns and outputs are English-only.
 
----
+## Project structure
+
+```
+testscribe/
+├── src/
+│   ├── agents/
+│   │   ├── report_enricher.py     # Agent 1: Given/When/Then + env detection
+│   │   ├── severity_scorer.py     # Agent 2: CVSS-lite 0–10 scoring
+│   │   ├── pattern_classifier.py  # Agent 3: RAG + ChromaDB semantic search
+│   │   └── compliance_tagger.py   # Agent 4: IEC 62304 + PSD2/DORA
+│   ├── schemas/
+│   │   ├── raw_report.py          # Pydantic v2 input validation
+│   │   └── enriched_report.py     # Pydantic v2 structured output
+│   ├── core/
+│   │   ├── orchestrator.py        # Pipeline coordinator
+│   │   ├── embedder.py            # TF-IDF / sentence-transformers facade
+│   │   └── vector_store.py        # ChromaDB client (external embeddings)
+│   ├── api/
+│   │   └── app.py                 # Flask REST API + dashboard
+│   └── data/
+│       ├── seed_reports.json      # 30 realistic bug reports (medtech/fintech/generic)
+│       └── pattern_library.json   # 9 pattern definitions + keywords
+├── tests/
+│   ├── unit/                      # 121 unit tests + property-based (Hypothesis)
+│   ├── integration/               # 23 API contract tests
+│   └── conftest.py
+├── docs/
+│   ├── ADR-001-chromadb-vs-faiss.md
+│   ├── ADR-002-embeddings-choice.md
+│   └── ADR-003-cvss-lite-scoring.md
+├── demo.py                        # Standalone demo — no API key required
+├── .github/workflows/ci.yml       # CI: lint → unit → integration → Allure
+├── docker-compose.yml
+└── requirements.txt
+```
 
 ## Related projects
 
