@@ -39,12 +39,35 @@ similarity search. Two embedding strategies were evaluated: a lightweight TF-IDF
 when available and used transparently via the same interface. The `Embedder` class exposes a
 single `embed(texts)` method; callers never interact with the underlying strategy.
 
+The pipeline's only caller opts out of that choice: `PatternClassifier` builds
+`Embedder(force_tfidf=True)`, so duplicate detection runs on TF-IDF whatever the
+environment says. See the amendment below.
+
 This mirrors the Claude API / rule-based fallback pattern used in Agents 1 and 2, and
 demonstrates a consistent architectural principle across the entire TestScribe pipeline.
 
 ## Consequences
 
 - **Positive:** CI always passes, zero network dependency, deterministic test corpus
-- **Positive:** Production upgrade path is one config flag (`USE_NEURAL_EMBEDDINGS=true`)
+- **Positive:** `Embedder` isolates the strategy, so a caller that wants the neural path
+  only has to stop forcing TF-IDF
 - **Negative:** TF-IDF misses semantic similarity between synonyms ("crash" vs "freeze")
 - **Mitigation:** Pattern library uses canonical QA vocabulary; keyword normalisation reduces synonym gaps
+
+---
+
+## Amendment — 2026-09-19
+
+Re-reading the code while fact-checking a published article showed that this ADR promised
+more than the code delivers. `PatternClassifier.__init__` pins `Embedder(force_tfidf=True)`
+(comment: `TF-IDF always (CI-safe)`), and it is the only place in the pipeline that builds an
+`Embedder`. Setting `USE_NEURAL_EMBEDDINGS=true` therefore changes nothing: duplicate
+detection always runs on TF-IDF, that is, on lexical similarity.
+
+The decision itself stands — TF-IDF by default, for reproducibility and a network-free CI.
+What was wrong was the consequence claiming the neural path was one environment variable
+away. That line is corrected above, and the READMEs no longer describe duplicate detection
+as semantic.
+
+Reaching the neural path would take a code change, plus a check that ChromaDB handles the
+dimension switch (TF-IDF is 512, MiniLM is 384). Neither has been done nor measured.

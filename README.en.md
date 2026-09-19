@@ -1,6 +1,6 @@
 # TestScribe
 
-**AI-powered bug report enricher: *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and semantic duplicate detection — in under 100ms.**
+**AI-powered bug report enricher: *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and duplicate detection — in under 100ms.**
 
 [![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
@@ -247,13 +247,13 @@ docker-compose up
 ## Design decisions
 
 - **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB over FAISS: simpler API, persistent storage, filter-by-metadata for sector isolation
-- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF default with sentence-transformers upgrade path: CI-safe without network, neural available in production
+- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF for duplicate detection: CI-safe without network, reproducible results. The `Embedder` can load sentence-transformers, but the classifier does not use it
 - **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapted for QA: 4 dimensions (functional_impact, reproducibility, user_scope, regression_type) calibrated against medtech safety expectations
 
 ## Known limitations
 
 - Fallback heuristics are calibrated on 30 seed reports — not an industrial corpus.
-- TF-IDF captures lexical similarity, not fine-grained semantics. Deliberate trade-off ([ADR-002](docs/ADR-002-embeddings-choice.md)): zero network dependency in CI, deterministic results; the sentence-transformers upgrade path is documented.
+- TF-IDF captures lexical similarity, not fine-grained semantics. Deliberate trade-off ([ADR-002](docs/ADR-002-embeddings-choice.md)): zero network dependency in CI, deterministic results. Moving to sentence-transformers would take a code change: `PatternClassifier` builds its `Embedder` with `force_tfidf=True`, so the `USE_NEURAL_EMBEDDINGS` variable never reaches it.
 - Compliance tags are a qualification aid, not a regulatory opinion.
 - Fallback mode produces poorer output than LLM mode (keyword rules, no rephrasing).
 - Corpus, patterns and outputs are English-only.

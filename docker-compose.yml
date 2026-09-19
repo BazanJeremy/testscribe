@@ -10,7 +10,8 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       FLASK_ENV: production
       FLASK_PORT: 5000
-      # Set to "true" to use sentence-transformers neural embeddings
+      # Read by Embedder, but PatternClassifier forces TF-IDF, so this has no
+      # effect on the pipeline today (see ADR-002, amendment)
       USE_NEURAL_EMBEDDINGS: "false"
     volumes:
       # Persist ChromaDB vector store between restarts
