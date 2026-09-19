@@ -1,6 +1,6 @@
 # TestScribe
 
-**Enrichissement de bug reports assisté par IA : *« button doesn't work »* → rapport de défaut structuré — sévérité CVSS-lite, classification IEC 62304, détection sémantique de doublons — en moins de 100 ms.**
+**Enrichissement de bug reports assisté par IA : *« button doesn't work »* → rapport de défaut structuré — sévérité CVSS-lite, classification IEC 62304, détection de doublons — en moins de 100 ms.**
 
 [![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
 [![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
@@ -148,13 +148,13 @@ docker-compose up
 ## Décisions de conception
 
 - **[ADR-001](docs/ADR-001-chromadb-vs-faiss.md)** — ChromaDB plutôt que FAISS : API simple, persistance, filtrage par métadonnées pour l'isolation par secteur
-- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF par défaut, sentence-transformers en option : CI sans réseau, neural disponible en production
+- **[ADR-002](docs/ADR-002-embeddings-choice.md)** — TF-IDF pour la détection de doublons : CI sans réseau, résultats reproductibles. L'`Embedder` sait charger sentence-transformers, mais le classifieur ne l'utilise pas
 - **[ADR-003](docs/ADR-003-cvss-lite-scoring.md)** — CVSS-lite adapté au QA : 4 dimensions calibrées sur les exigences de sécurité medtech
 
 ## Limites connues
 
 - Les heuristiques du fallback sont calibrées sur 30 rapports seed — pas sur un corpus industriel.
-- TF-IDF capte la similarité lexicale, pas la sémantique fine. Choix assumé ([ADR-002](docs/ADR-002-embeddings-choice.md)) : zéro dépendance réseau en CI, déterminisme ; la montée vers sentence-transformers est documentée.
+- TF-IDF capte la similarité lexicale, pas la sémantique fine. Choix assumé ([ADR-002](docs/ADR-002-embeddings-choice.md)) : zéro dépendance réseau en CI, déterminisme. Passer à sentence-transformers demanderait un changement de code : `PatternClassifier` construit son `Embedder` avec `force_tfidf=True`, donc la variable `USE_NEURAL_EMBEDDINGS` ne l'atteint pas.
 - Les tags de conformité sont une aide à la qualification, pas un avis réglementaire.
 - Le mode fallback produit des sorties plus pauvres que le mode LLM (règles à mots-clés, pas de reformulation).
 - Corpus, patterns et sorties en anglais uniquement.
