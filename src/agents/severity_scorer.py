@@ -166,14 +166,31 @@ def score_rule_based(
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = """You are a senior QA engineer specialised in severity assessment.
-Given a bug report, return a CVSS-lite severity score as valid JSON with these keys:
+Given a bug report, return a CVSS-lite severity score with these fields:
 - functional_impact: "none" | "partial" | "full"
 - reproducibility: "always" | "sometimes" | "rare"
 - user_scope: "single" | "group" | "all"
 - regression_type: "new" | "known" | "reopened"
-- rationale: str (one sentence justifying the scoring, max 200 chars)
+- rationale: one sentence justifying the scoring, max 200 chars"""
 
-Return ONLY the JSON object. No markdown, no explanation."""
+_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "functional_impact": {"type": "string", "enum": ["none", "partial", "full"]},
+        "reproducibility": {"type": "string", "enum": ["always", "sometimes", "rare"]},
+        "user_scope": {"type": "string", "enum": ["single", "group", "all"]},
+        "regression_type": {"type": "string", "enum": ["new", "known", "reopened"]},
+        "rationale": {"type": "string"},
+    },
+    "required": [
+        "functional_impact",
+        "reproducibility",
+        "user_scope",
+        "regression_type",
+        "rationale",
+    ],
+    "additionalProperties": False,
+}
 
 
 def score_with_claude(
@@ -197,15 +214,17 @@ def score_with_claude(
         max_tokens=512,
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": context}],
+        output_config={"format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}},
     )
+    if message.stop_reason != "end_turn":
+        raise RuntimeError(f"LLM stopped early (stop_reason={message.stop_reason})")
 
     raw_text = ""
     for block in message.content:
         if hasattr(block, "text"):
             raw_text += block.text
 
-    clean = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-    data = json.loads(clean)
+    data = json.loads(raw_text)
 
     impact: FunctionalImpact = data.get("functional_impact", "partial")
     repro: Reproducibility = data.get("reproducibility", "sometimes")
