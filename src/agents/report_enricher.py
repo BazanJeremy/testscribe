@@ -152,16 +152,48 @@ def enrich_rule_based(
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT = """You are a senior QA engineer. Given a raw bug report, produce a
-structured enrichment as valid JSON with exactly these keys:
-- title: str (concise, max 120 chars)
-- summary: str (professional one-liner, max 300 chars)
-- reproduction_steps: list[str] (3-5 steps in Given/When/Then format)
-- environment: dict[str,str] (inferred os, browser, version, environment)
-- expected_result: str (what should happen, max 300 chars)
-- actual_result: str (what actually happened, max 300 chars)
-- confidence_score: float (0.0-1.0, your confidence in the enrichment)
+structured enrichment with these fields:
+- title: concise, max 120 chars
+- summary: professional one-liner, max 300 chars
+- reproduction_steps: 3-5 steps in Given/When/Then format
+- environment: key/value pairs for what the report lets you infer (os, browser,
+  version, environment); leave out what it does not mention
+- expected_result: what should happen, max 300 chars
+- actual_result: what actually happened, max 300 chars
+- confidence_score: 0.0-1.0, your confidence in the enrichment"""
 
-Return ONLY the JSON object. No markdown, no explanation."""
+# Structured outputs reject free-form maps (additionalProperties must be
+# false): environment arrives as a list of key/value pairs, rebuilt as a dict.
+_RESPONSE_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "reproduction_steps": {"type": "array", "items": {"type": "string"}},
+        "environment": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"key": {"type": "string"}, "value": {"type": "string"}},
+                "required": ["key", "value"],
+                "additionalProperties": False,
+            },
+        },
+        "expected_result": {"type": "string"},
+        "actual_result": {"type": "string"},
+        "confidence_score": {"type": "number"},
+    },
+    "required": [
+        "title",
+        "summary",
+        "reproduction_steps",
+        "environment",
+        "expected_result",
+        "actual_result",
+        "confidence_score",
+    ],
+    "additionalProperties": False,
+}
 
 
 def enrich_with_claude(
@@ -188,22 +220,23 @@ def enrich_with_claude(
         max_tokens=1024,
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": context}],
+        output_config={"format": {"type": "json_schema", "schema": _RESPONSE_SCHEMA}},
     )
+    if message.stop_reason != "end_turn":
+        raise RuntimeError(f"LLM stopped early (stop_reason={message.stop_reason})")
 
     raw_text = ""
     for block in message.content:
         if hasattr(block, "text"):
             raw_text += block.text
 
-    # Strip possible markdown fences
-    clean = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-    data = json.loads(clean)
+    data = json.loads(raw_text)
 
     return EnrichmentResult(
         title=str(data.get("title", title or ""))[:200],
         summary=str(data.get("summary", ""))[:400],
         reproduction_steps=list(data.get("reproduction_steps", [])),
-        environment=dict(data.get("environment", {})),
+        environment={p["key"]: p["value"] for p in data.get("environment", [])},
         expected_result=str(data.get("expected_result", ""))[:400],
         actual_result=str(data.get("actual_result", ""))[:400],
         enriched_by="claude-sonnet-4-6",
