@@ -13,7 +13,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 try:
     import anthropic
@@ -199,27 +199,54 @@ def _tag_fintech(text: str, pattern: str = "", severity_priority: str = "medium"
 # ---------------------------------------------------------------------------
 
 _SYSTEM_PROMPT_MEDTECH = """You are a medical device software compliance specialist (IEC 62304).
-Analyse this bug report and return JSON with these keys:
+Analyse this bug report and return these fields:
 - iec_62304_class: "A" | "B" | "C" (A=no injury, B=non-serious injury, C=serious injury/death)
-- soup_impact: bool (does this affect a Software Of Unknown Provenance component?)
-- traceability_tag: str (requirement ID or "SRS-GEN-UNTRACED")
-- change_control_required: bool
-- rationale: str (one sentence, max 200 chars)
-
-Return ONLY the JSON object."""
+- soup_impact: does this affect a Software Of Unknown Provenance component?
+- traceability_tag: requirement ID or "SRS-GEN-UNTRACED"
+- change_control_required
+- rationale: one sentence, max 200 chars"""
 
 _SYSTEM_PROMPT_FINTECH = """You are a PSD2/DORA compliance specialist.
-Analyse this bug report and return JSON with these keys:
-- psd2_article: str | null (most relevant PSD2 article, e.g. "Art.97 — Strong Customer Authentication")
+Analyse this bug report and return these fields:
+- psd2_article: most relevant PSD2 article (e.g. "Art.97 — Strong Customer Authentication"),
+  or null when no article applies
 - dora_risk_level: "low" | "medium" | "high"
-- aml_flag: bool (potential Anti-Money Laundering relevance)
-- incident_reporting_required: bool
-- rationale: str (one sentence, max 200 chars)
-
-Return ONLY the JSON object."""
+- aml_flag: potential Anti-Money Laundering relevance
+- incident_reporting_required
+- rationale: one sentence, max 200 chars"""
 
 
-def _claude_tag(system: str, text: str, api_key: str) -> dict:
+def _strict_object(properties: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "type": "object",
+        "properties": properties,
+        "required": list(properties),
+        "additionalProperties": False,
+    }
+
+
+_SCHEMA_MEDTECH = _strict_object(
+    {
+        "iec_62304_class": {"type": "string", "enum": ["A", "B", "C"]},
+        "soup_impact": {"type": "boolean"},
+        "traceability_tag": {"type": "string"},
+        "change_control_required": {"type": "boolean"},
+        "rationale": {"type": "string"},
+    }
+)
+
+_SCHEMA_FINTECH = _strict_object(
+    {
+        "psd2_article": {"anyOf": [{"type": "string"}, {"type": "null"}]},
+        "dora_risk_level": {"type": "string", "enum": ["low", "medium", "high"]},
+        "aml_flag": {"type": "boolean"},
+        "incident_reporting_required": {"type": "boolean"},
+        "rationale": {"type": "string"},
+    }
+)
+
+
+def _claude_tag(system: str, schema: dict[str, Any], text: str, api_key: str) -> dict:
     if not _ANTHROPIC_AVAILABLE:
         raise RuntimeError("anthropic package not installed")
     client = anthropic.Anthropic(api_key=api_key)
@@ -228,10 +255,12 @@ def _claude_tag(system: str, text: str, api_key: str) -> dict:
         max_tokens=512,
         system=system,
         messages=[{"role": "user", "content": text}],
+        output_config={"format": {"type": "json_schema", "schema": schema}},
     )
+    if msg.stop_reason != "end_turn":
+        raise RuntimeError(f"LLM stopped early (stop_reason={msg.stop_reason})")
     raw = "".join(b.text for b in msg.content if hasattr(b, "text"))
-    clean = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)
-    return json.loads(clean)
+    return json.loads(raw)
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +315,7 @@ class ComplianceTagger:
     ) -> ComplianceResult:
         assert self._api_key
         if sector == "medtech":
-            data = _claude_tag(_SYSTEM_PROMPT_MEDTECH, text, self._api_key)
+            data = _claude_tag(_SYSTEM_PROMPT_MEDTECH, _SCHEMA_MEDTECH, text, self._api_key)
             mt = MedtechTag(
                 iec_62304_class=data.get("iec_62304_class", "A"),
                 soup_impact=bool(data.get("soup_impact", False)),
@@ -296,7 +325,7 @@ class ComplianceTagger:
             )
             return ComplianceResult(sector="medtech", medtech=mt, tagged_by="claude-sonnet-4-6")
 
-        data = _claude_tag(_SYSTEM_PROMPT_FINTECH, text, self._api_key)
+        data = _claude_tag(_SYSTEM_PROMPT_FINTECH, _SCHEMA_FINTECH, text, self._api_key)
         ft = FintechTag(
             psd2_article=data.get("psd2_article"),
             dora_risk_level=data.get("dora_risk_level", "low"),
