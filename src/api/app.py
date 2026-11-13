@@ -15,6 +15,7 @@ import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from flask import Flask, Response, jsonify, request
 
@@ -371,6 +372,12 @@ tbody td{padding:8px 10px;vertical-align:middle}
 // ── State ──────────────────────────────────────────────────────────────────
 let _reports = [];
 
+// Report text reaches the page through innerHTML: escape it first.
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // ── Enrich ─────────────────────────────────────────────────────────────────
 async function enrichReport() {
   const btn = document.getElementById('enrichBtn');
@@ -470,7 +477,7 @@ function renderCharts(t) {
   if (!entries.length) { patEl.innerHTML = '<div class="empty">No data yet</div>'; return; }
   patEl.innerHTML = entries.map(([k,v]) => `
     <div class="bar-item" onclick="filterByPattern('${k}')" style="cursor:pointer" title="Filter by ${k}">
-      <span class="bar-label">${k}</span>
+      <span class="bar-label">${esc(k)}</span>
       <div class="bar-track"><div class="bar-fill" style="width:${(Number(v)/maxP*100).toFixed(0)}%"></div></div>
       <span class="bar-count">${v}</span>
     </div>`).join('');
@@ -518,12 +525,12 @@ function renderTable() {
     const iec = r.compliance?.medtech?.iec_62304_class
       ? `<span class="iec-chip">IEC ${r.compliance.medtech.iec_62304_class}</span>` : '';
     const psd2 = r.compliance?.fintech?.psd2_article
-      ? `<span class="iec-chip" title="${r.compliance.fintech.psd2_article}">PSD2</span>` : '';
+      ? `<span class="iec-chip" title="${esc(r.compliance.fintech.psd2_article)}">PSD2</span>` : '';
     const conf = r.confidence_score != null ? `${(r.confidence_score*100).toFixed(0)}%` : '—';
     return `<tr onclick="showDetail(${_reports.indexOf(r)})">
       <td>${i+1}</td>
-      <td class="td-title" title="${r.title||''}">${r.title||'—'}</td>
-      <td class="td-pattern">${r.pattern||'—'}</td>
+      <td class="td-title" title="${esc(r.title||'')}">${esc(r.title||'—')}</td>
+      <td class="td-pattern">${esc(r.pattern||'—')}</td>
       <td><span class="priority-chip ${chipClass}">
         <span class="dot dot-${p}"></span>${p.toUpperCase()}
       </span></td>
@@ -542,9 +549,9 @@ function showDetail(idx) {
   document.getElementById('modalTitle').textContent = r.title || 'Report Detail';
   const sev = r.severity || {};
   const comp = r.compliance || {};
-  const steps = (r.reproduction_steps || []).map(s => `<li>${s}</li>`).join('');
+  const steps = (r.reproduction_steps || []).map(s => `<li>${esc(s)}</li>`).join('');
   const similar = (r.similar_bugs || []).map(b =>
-    `<li>${b.bug_id} — ${b.pattern} (${(b.similarity_score*100).toFixed(0)}% sim)</li>`
+    `<li>${esc(b.bug_id)} — ${esc(b.pattern)} (${(b.similarity_score*100).toFixed(0)}% sim)</li>`
   ).join('') || '<li style="color:var(--muted)">None found</li>';
 
   let compHTML = '';
@@ -553,10 +560,10 @@ function showDetail(idx) {
     compHTML = `<p>IEC 62304 Class: <strong>${m.iec_62304_class}</strong></p>
       <p>SOUP impact: ${m.soup_impact?'Yes':'No'}</p>
       <p>Change control: ${m.change_control_required?'Required':'Not required'}</p>
-      <p>Traceability: <code>${m.traceability_tag}</code></p>`;
+      <p>Traceability: <code>${esc(m.traceability_tag)}</code></p>`;
   } else if (comp.fintech) {
     const f = comp.fintech;
-    compHTML = `<p>PSD2: ${f.psd2_article||'N/A'}</p>
+    compHTML = `<p>PSD2: ${esc(f.psd2_article||'N/A')}</p>
       <p>DORA risk: <strong>${f.dora_risk_level}</strong></p>
       <p>AML flag: ${f.aml_flag?'⚠ Yes':'No'}</p>
       <p>Incident reporting: ${f.incident_reporting_required?'Required':'Not required'}</p>`;
@@ -566,7 +573,7 @@ function showDetail(idx) {
 
   document.getElementById('modalContent').innerHTML = `
     <div class="detail-block full-width">
-      <h3>Summary</h3><p>${r.summary||r.raw_input||'—'}</p>
+      <h3>Summary</h3><p>${esc(r.summary||r.raw_input||'—')}</p>
     </div>
     <div class="detail-block">
       <h3>Reproduction Steps</h3><ul>${steps||'<li>—</li>'}</ul>
@@ -576,7 +583,7 @@ function showDetail(idx) {
       <p>Score: <strong>${sev.score}/10</strong> · ${sev.priority?.toUpperCase()}</p>
       <p>Impact: ${sev.functional_impact} · Repro: ${sev.reproducibility}</p>
       <p>Scope: ${sev.user_scope} · Regression: ${sev.regression_type}</p>
-      <p style="color:var(--muted);font-size:11px;margin-top:6px">${sev.rationale||''}</p>
+      <p style="color:var(--muted);font-size:11px;margin-top:6px">${esc(sev.rationale||'')}</p>
     </div>
     <div class="detail-block">
       <h3>Compliance</h3>${compHTML}
@@ -587,7 +594,7 @@ function showDetail(idx) {
     </div>
     <div class="detail-block">
       <h3>Environment</h3>
-      ${Object.entries(r.environment||{}).map(([k,v])=>`<p>${k}: ${v}</p>`).join('')||'<p style="color:var(--muted)">Unspecified</p>'}
+      ${Object.entries(r.environment||{}).map(([k,v])=>`<p>${esc(k)}: ${esc(v)}</p>`).join('')||'<p style="color:var(--muted)">Unspecified</p>'}
       <p style="margin-top:6px;color:var(--muted);font-size:11px">Enriched by: ${r.enriched_by}</p>
     </div>`;
   document.getElementById('modal').classList.add('open');
@@ -622,6 +629,20 @@ def dashboard() -> str:
     return _DASHBOARD_HTML
 
 
+def run_config() -> dict[str, Any]:
+    """Bind settings for ``python src/api/app.py``, read from the environment.
+
+    Local by default. A container sets ``FLASK_HOST=0.0.0.0``, without which a
+    published port reaches nothing. The Werkzeug debugger executes code for
+    whoever reaches it, so it is opt-in (``FLASK_DEBUG=1``), never the default.
+    """
+    return {
+        "host": os.environ.get("FLASK_HOST", "127.0.0.1"),
+        "port": int(os.environ.get("FLASK_PORT", 5000)),
+        "debug": os.environ.get("FLASK_DEBUG") == "1",
+    }
+
+
 if __name__ == "__main__":
-    port = int(os.environ.get("FLASK_PORT", 5000))
-    app.run(debug=True, port=port)
+    _config = run_config()
+    app.run(host=_config["host"], port=_config["port"], debug=_config["debug"])
