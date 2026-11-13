@@ -20,6 +20,8 @@ RUN mkdir -p /app/data/chroma_db
 
 EXPOSE 5000
 
+# Listen on all interfaces: the published port reaches nothing otherwise
+ENV FLASK_HOST=0.0.0.0
 ENV FLASK_PORT=5000
 ENV PYTHONUNBUFFERED=1
 

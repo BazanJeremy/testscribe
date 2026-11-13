@@ -3,7 +3,7 @@
 **Enrichissement de bug reports assisté par IA : *« button doesn't work »* → rapport de défaut structuré — sévérité CVSS-lite, classification IEC 62304, détection de doublons — en moins de 100 ms.**
 
 [![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
+[![Tests](https://img.shields.io/badge/tests-146%20passing-brightgreen?logo=pytest)](tests/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -99,7 +99,7 @@ Trois bugs réels du pipeline ont été attrapés par la suite de tests pendant 
 | Alarme de pompe à perfusion scorée `high` au lieu de `critical` | `test_alarm_bug_scores_critical` | seuil critique abaissé 8.5 → 8.0 |
 | Bug cosmétique UI classé IEC 62304 classe B | `test_class_a_no_change_control` | regex classe B resserrée ; classe A sans change control |
 
-144 tests (121 unitaires dont property-based avec Hypothesis, 23 d'intégration API), CI en 5 jobs sans clé API, décisions d'architecture tracées en ADRs. Le niveau d'exigence qu'on applique à un logiciel régulé, appliqué à l'outil IA lui-même.
+146 tests (121 unitaires dont property-based avec Hypothesis, 25 d'intégration API), CI en 5 jobs sans clé API, décisions d'architecture tracées en ADRs. Le niveau d'exigence qu'on applique à un logiciel régulé, appliqué à l'outil IA lui-même.
 
 ## Stack technique
 

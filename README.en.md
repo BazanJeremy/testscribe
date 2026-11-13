@@ -3,7 +3,7 @@
 **AI-powered bug report enricher: *"button doesn't work"* → structured defect report with CVSS-lite severity, IEC 62304 classification, and duplicate detection — in under 100ms.**
 
 [![CI](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml/badge.svg)](https://github.com/BazanJeremy/testscribe/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/tests-144%20passing-brightgreen?logo=pytest)](tests/)
+[![Tests](https://img.shields.io/badge/tests-146%20passing-brightgreen?logo=pytest)](tests/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python)](pyproject.toml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
@@ -282,7 +282,7 @@ testscribe/
 │       └── pattern_library.json   # 9 pattern definitions + keywords
 ├── tests/
 │   ├── unit/                      # 121 unit tests + property-based (Hypothesis)
-│   ├── integration/               # 23 API contract tests
+│   ├── integration/               # 25 API contract tests
 │   └── conftest.py
 ├── docs/
 │   ├── ADR-001-chromadb-vs-faiss.md

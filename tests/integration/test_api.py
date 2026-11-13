@@ -200,3 +200,42 @@ class TestDashboard:
     def test_dashboard_contains_testscribe(self, client):
         r = client.get("/")
         assert b"TestScribe" in r.data
+
+    def test_dashboard_escapes_report_text_before_innerhtml(self, client):
+        # The table and the detail modal are built with innerHTML. Free text
+        # that comes from a report (title, steps, summary, environment...) was
+        # interpolated raw: a title holding markup ran as markup (stored XSS).
+        html = client.get("/").get_data(as_text=True)
+        assert "function esc(" in html
+        raw_interpolations = [
+            "${r.title",
+            "${r.pattern",
+            "${r.summary",
+            "<li>${s}</li>",
+            "${b.bug_id}",
+            "${b.pattern}",
+            "${m.traceability_tag}",
+            "${f.psd2_article",
+            "${r.compliance.fintech.psd2_article}",
+            "${sev.rationale",
+            "<p>${k}: ${v}</p>",
+        ]
+        assert [raw for raw in raw_interpolations if raw in html] == []
+
+
+class TestRunConfig:
+    """How ``python src/api/app.py`` binds — the Docker image runs exactly that."""
+
+    def test_defaults_are_local_and_debugger_off(self, monkeypatch):
+        from api.app import run_config
+
+        for name in ("FLASK_HOST", "FLASK_PORT", "FLASK_DEBUG"):
+            monkeypatch.delenv(name, raising=False)
+        assert run_config() == {"host": "127.0.0.1", "port": 5000, "debug": False}
+
+        # A container must listen on all interfaces to be reachable through
+        # a published port; the debugger stays opt-in.
+        monkeypatch.setenv("FLASK_HOST", "0.0.0.0")
+        monkeypatch.setenv("FLASK_PORT", "8080")
+        monkeypatch.setenv("FLASK_DEBUG", "1")
+        assert run_config() == {"host": "0.0.0.0", "port": 8080, "debug": True}
