@@ -13,6 +13,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from core.embedder import Embedder
 from core.vector_store import SearchResult, VectorStore
@@ -48,9 +49,10 @@ class ClassificationResult:
 # Keyword-based fallback classifier
 # ---------------------------------------------------------------------------
 
-def _load_pattern_library() -> list[dict]:
+def _load_pattern_library() -> list[dict[str, Any]]:
     with _PATTERN_LIBRARY_PATH.open(encoding="utf-8") as f:
-        return json.load(f)["patterns"]
+        patterns: list[dict[str, Any]] = json.load(f)["patterns"]
+    return patterns
 
 
 def _kw_hits(kw: str, combined: str) -> bool:
@@ -65,7 +67,7 @@ def _kw_hits(kw: str, combined: str) -> bool:
         return bool(re.search(r"\b" + stem, combined))
 
 
-def _classify_keyword(text: str, patterns: list[dict]) -> str:
+def _classify_keyword(text: str, patterns: list[dict[str, Any]]) -> str:
     """Keyword-based pattern classification — deterministic fallback."""
     combined = text.lower()
     scores: dict[str, int] = {}
@@ -80,9 +82,9 @@ def _classify_keyword(text: str, patterns: list[dict]) -> str:
     # Prefer highest score; break ties with _PRIORITY order
     max_hits = max(scores.values())
     candidates = [k for k, v in scores.items() if v == max_hits]
-    for p in _PRIORITY:
-        if p in candidates:
-            return p
+    for name in _PRIORITY:
+        if name in candidates:
+            return name
     return candidates[0]
 
 

@@ -86,7 +86,7 @@ class Orchestrator:
         sector = raw.sector or "generic"
         compliance_result = self._tagger.tag(
             raw.description,
-            sector=sector,  # type: ignore[arg-type]
+            sector=sector,
             pattern=classification.pattern,
             severity_priority=severity.priority,
             title=raw.title,

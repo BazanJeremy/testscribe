@@ -246,7 +246,9 @@ _SCHEMA_FINTECH = _strict_object(
 )
 
 
-def _claude_tag(system: str, schema: dict[str, Any], text: str, api_key: str) -> dict:
+def _claude_tag(
+    system: str, schema: dict[str, Any], text: str, api_key: str
+) -> dict[str, Any]:
     if not _ANTHROPIC_AVAILABLE:
         raise RuntimeError("anthropic package not installed")
     client = anthropic.Anthropic(api_key=api_key)
@@ -260,7 +262,8 @@ def _claude_tag(system: str, schema: dict[str, Any], text: str, api_key: str) ->
     if msg.stop_reason != "end_turn":
         raise RuntimeError(f"LLM stopped early (stop_reason={msg.stop_reason})")
     raw = "".join(b.text for b in msg.content if hasattr(b, "text"))
-    return json.loads(raw)
+    tagged: dict[str, Any] = json.loads(raw)
+    return tagged
 
 
 # ---------------------------------------------------------------------------
