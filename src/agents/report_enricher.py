@@ -101,7 +101,7 @@ def _build_steps(title: str, description: str, component: str | None) -> list[st
 
 
 def _extract_actual(description: str) -> str:
-    sentences = [s.strip() for s in re.split(r"[.!?]+", description) if s.strip()]
+    sentences: list[str] = [s.strip() for s in re.split(r"[.!?]+", description) if s.strip()]
     for s in reversed(sentences):
         if len(s) > 20 and not _EXPECTED_KEYWORDS.search(s):
             return s[:300]

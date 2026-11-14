@@ -26,8 +26,11 @@ from schemas import RawReport
 
 app = Flask(__name__)
 
-_REPORT_STORE: list[dict] = []
+_REPORT_STORE: list[dict[str, Any]] = []
 _orchestrator: Orchestrator | None = None
+
+# A Flask view may return the response alone or with its status code.
+ViewReturn = Response | tuple[Response, int]
 
 
 def get_orchestrator() -> Orchestrator:
@@ -48,7 +51,7 @@ def health() -> Response:
 
 
 @app.route("/api/enrich", methods=["POST"])
-def enrich_one() -> Response:
+def enrich_one() -> ViewReturn:
     body = request.get_json(silent=True)
     if not body:
         return jsonify({"error": "JSON body required"}), 400
@@ -66,7 +69,7 @@ def enrich_one() -> Response:
 
 
 @app.route("/api/enrich/batch", methods=["POST"])
-def enrich_batch() -> Response:
+def enrich_batch() -> ViewReturn:
     body = request.get_json(silent=True)
     if not isinstance(body, list):
         return jsonify({"error": "JSON array of reports required"}), 400
@@ -103,9 +106,9 @@ def list_reports() -> Response:
 @app.route("/api/trends")
 def trends() -> Response:
     from collections import Counter
-    patterns: Counter = Counter()
-    priorities: Counter = Counter()
-    sectors: Counter = Counter()
+    patterns: Counter[str] = Counter()
+    priorities: Counter[str] = Counter()
+    sectors: Counter[str] = Counter()
     for r in _REPORT_STORE:
         patterns[r.get("pattern", "UNKNOWN")] += 1
         priorities[r.get("severity", {}).get("priority", "unknown")] += 1

@@ -9,9 +9,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import chromadb
 import numpy as np
+from chromadb.api.types import Metadata, Where
 from numpy.typing import NDArray
 
 
@@ -22,7 +24,7 @@ class SearchResult:
     pattern: str
     sector: str
     similarity_score: float  # 0.0 (identical) to 1.0 (opposite) — cosine distance
-    metadata: dict
+    metadata: dict[str, Any]
 
 
 class VectorStore:
@@ -48,7 +50,7 @@ class VectorStore:
         self._col = self._client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"},
-            embedding_function=None,  # type: ignore[arg-type]
+            embedding_function=None,
         )
 
     # ------------------------------------------------------------------
@@ -62,9 +64,9 @@ class VectorStore:
         embedding: NDArray[np.float32],
         pattern: str,
         sector: str,
-        extra_metadata: dict | None = None,
+        extra_metadata: dict[str, Any] | None = None,
     ) -> None:
-        metadata: dict = {"pattern": pattern, "sector": sector}
+        metadata: dict[str, str | int | float | bool] = {"pattern": pattern, "sector": sector}
         if extra_metadata:
             # ChromaDB only supports str/int/float/bool metadata values
             for k, v in extra_metadata.items():
@@ -87,7 +89,7 @@ class VectorStore:
     ) -> None:
         if not bug_ids:
             return
-        metadatas = [
+        metadatas: list[Metadata] = [
             {"pattern": p, "sector": s} for p, s in zip(patterns, sectors, strict=False)
         ]
         self._col.upsert(
@@ -112,7 +114,7 @@ class VectorStore:
             return []
 
         n = min(n_results, count)
-        where = {"sector": sector_filter} if sector_filter else None
+        where: Where | None = {"sector": sector_filter} if sector_filter else None
 
         try:
             result = self._col.query(
@@ -130,10 +132,10 @@ class VectorStore:
             )
 
         out: list[SearchResult] = []
-        ids = result.get("ids", [[]])[0]
-        docs = result.get("documents", [[]])[0]
-        metas = result.get("metadatas", [[]])[0]
-        distances = result.get("distances", [[]])[0]
+        ids = (result.get("ids") or [[]])[0]
+        docs = (result.get("documents") or [[]])[0]
+        metas = (result.get("metadatas") or [[]])[0]
+        distances = (result.get("distances") or [[]])[0]
 
         for bug_id, doc, meta, dist in zip(ids, docs, metas, distances, strict=False):
             out.append(
@@ -161,5 +163,5 @@ class VectorStore:
         self._col = self._client.get_or_create_collection(
             name=self._col.name,
             metadata={"hnsw:space": "cosine"},
-            embedding_function=None,  # type: ignore[arg-type]
+            embedding_function=None,
         )

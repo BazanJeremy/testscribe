@@ -28,8 +28,8 @@ jobs:
       - name: Ruff lint
         run: ruff check src/ tests/
 
-      - name: Mypy type check (non-blocking — informational)
-        run: mypy src/ --ignore-missing-imports || true
+      - name: Mypy type check (strict, blocking)
+        run: mypy src/ --ignore-missing-imports
 
   # -------------------------------------------------------------------------
   # Job 2 — Unit tests

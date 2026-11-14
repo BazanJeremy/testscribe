@@ -45,6 +45,7 @@ class TfidfEmbedder:
         if not self._fitted or self._vectorizer is None:
             # Fit on the texts themselves (cold-start: only for single queries)
             self.fit(texts)
+        assert self._vectorizer is not None  # fit() always sets it
         matrix = self._vectorizer.transform(texts).toarray().astype(np.float32)
         # Pad or truncate to fixed DIM
         if matrix.shape[1] < self._DIM:
@@ -53,7 +54,8 @@ class TfidfEmbedder:
         elif matrix.shape[1] > self._DIM:
             matrix = matrix[:, : self._DIM]
         # L2-normalise so cosine similarity == dot product
-        return normalize(matrix, norm="l2")
+        normalized: NDArray[np.float32] = normalize(matrix, norm="l2")
+        return normalized
 
     @property
     def dim(self) -> int:
@@ -71,7 +73,7 @@ class NeuralEmbedder:
 
     def __init__(self) -> None:
         try:
-            from sentence_transformers import SentenceTransformer  # type: ignore
+            from sentence_transformers import SentenceTransformer
 
             self._model = SentenceTransformer(self._MODEL_NAME)
             self._available = True
@@ -86,7 +88,8 @@ class NeuralEmbedder:
         if not self._available:
             raise RuntimeError("sentence-transformers model not available")
         vecs = self._model.encode(texts, convert_to_numpy=True, normalize_embeddings=True)
-        return vecs.astype(np.float32)
+        encoded: NDArray[np.float32] = vecs.astype(np.float32)
+        return encoded
 
     @property
     def dim(self) -> int:
