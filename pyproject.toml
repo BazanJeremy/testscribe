@@ -9,7 +9,7 @@ description = "AI-powered bug report enricher with RAG pattern classification"
 requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.7",
-    "anthropic>=0.28",
+    "anthropic>=0.77",
     "flask>=3.0",
     "chromadb>=0.5",
     "sentence-transformers>=3.0",
