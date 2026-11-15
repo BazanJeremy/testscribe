@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Least privilege: jobs only read the repository. A job that needs more
+# declares it itself.
+permissions:
+  contents: read
+
 jobs:
   # -------------------------------------------------------------------------
   # Job 1 — Lint & static analysis
